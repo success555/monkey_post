@@ -14,9 +14,10 @@ export class Pitch {
   }
 
   /**
-   * Generates high-resolution asphalt tarmac texture matching reference photo:
+   * Generates high-resolution asphalt tarmac texture exactly matching reference photo:
    * Dark aged tarmac, organic bitumen patches, crack networks, yellow dashed curb markings,
-   * white regulation lines, corner arcs, penalty boxes, penalty D-arcs, and scattered leaves.
+   * white regulation lines, corner arcs, penalty boxes, penalty D-arcs,
+   * VIBRANT AFRICA MAP painted inside the center circle, and organic yellow paint spills!
    */
   private createAsphaltStreetTextures(): {
     diffuseMap: THREE.CanvasTexture;
@@ -45,7 +46,7 @@ export class Pitch {
     const bCtx = bCanvas.getContext('2d')!;
 
     // 1. BASE DARK ASPHALT / TARMAC SURFACE
-    dCtx.fillStyle = '#2d3035';
+    dCtx.fillStyle = '#2f3338';
     dCtx.fillRect(0, 0, width, height);
 
     rCtx.fillStyle = '#dedede'; // High roughness for gritty tarmac
@@ -55,7 +56,7 @@ export class Pitch {
     bCtx.fillRect(0, 0, width, height);
 
     // 2. ASPHALT AGGREGATE GRAIN NOISE (Granular stone specks)
-    for (let i = 0; i < 90000; i++) {
+    for (let i = 0; i < 95000; i++) {
       const x = Math.random() * width;
       const y = Math.random() * height;
       const isLight = Math.random() > 0.45;
@@ -85,7 +86,7 @@ export class Pitch {
       dCtx.translate(p.x, p.y);
       dCtx.rotate(p.rot);
       const grad = dCtx.createRadialGradient(0, 0, 10, 0, 0, p.rx);
-      grad.addColorStop(0, 'rgba(28, 30, 34, 0.75)');
+      grad.addColorStop(0, 'rgba(26, 28, 32, 0.75)');
       grad.addColorStop(0.7, 'rgba(35, 38, 43, 0.45)');
       grad.addColorStop(1, 'rgba(45, 48, 53, 0)');
       dCtx.fillStyle = grad;
@@ -132,7 +133,6 @@ export class Pitch {
         dCtx.lineTo(curX, curY);
         bCtx.lineTo(curX, curY);
 
-        // Branching secondary fissure
         if (branches > 0 && Math.random() < 0.18) {
           const bAngle = curAngle + (Math.random() > 0.5 ? 0.8 : -0.8);
           drawCrack(curX, curY, length * 0.45, bAngle, branches - 1);
@@ -154,7 +154,83 @@ export class Pitch {
     ];
     crackSeeds.forEach(cs => drawCrack(cs.x, cs.y, cs.len, cs.a, 2));
 
-    // 5. REGULATION WHITE PITCH MARKINGS & YELLOW CURB DASHES
+    // 5. ORGANIC YELLOW PAINT SPLATTERS / SPILLS (Exact match to reference photo)
+    const drawYellowSplatter = (
+      centerX: number,
+      centerY: number,
+      radiusX: number,
+      radiusY: number,
+      rotation: number
+    ) => {
+      dCtx.save();
+      dCtx.translate(centerX, centerY);
+      dCtx.rotate(rotation);
+
+      // Splatter base polygon with organic ragged edges
+      dCtx.beginPath();
+      const numPoints = 28;
+      for (let i = 0; i < numPoints; i++) {
+        const ang = (i / numPoints) * Math.PI * 2;
+        const noise = 0.65 + Math.sin(ang * 4) * 0.2 + Math.cos(ang * 7) * 0.15 + (Math.random() - 0.5) * 0.12;
+        const rx = radiusX * noise;
+        const ry = radiusY * noise;
+        const px = Math.cos(ang) * rx;
+        const py = Math.sin(ang) * ry;
+        if (i === 0) dCtx.moveTo(px, py);
+        else dCtx.lineTo(px, py);
+      }
+      dCtx.closePath();
+
+      // Main yellow paint fill
+      dCtx.fillStyle = '#eab308';
+      dCtx.fill();
+
+      // Slightly brighter weathered center
+      dCtx.fillStyle = 'rgba(250, 204, 21, 0.85)';
+      dCtx.fill();
+
+      // Paint drip satellites / droplets around perimeter
+      for (let d = 0; d < 22; d++) {
+        const dAng = Math.random() * Math.PI * 2;
+        const dist = (radiusX + radiusY) * 0.5 * (1.1 + Math.random() * 0.45);
+        const dx = Math.cos(dAng) * dist;
+        const dy = Math.sin(dAng) * dist;
+        const dSize = 2 + Math.random() * 6;
+        dCtx.beginPath();
+        dCtx.arc(dx, dy, dSize, 0, Math.PI * 2);
+        dCtx.fillStyle = '#eab308';
+        dCtx.fill();
+      }
+
+      dCtx.restore();
+
+      // Paint sits proud and slightly smoother on asphalt
+      rCtx.save();
+      rCtx.translate(centerX, centerY);
+      rCtx.rotate(rotation);
+      rCtx.fillStyle = '#909090';
+      rCtx.beginPath();
+      rCtx.ellipse(0, 0, radiusX * 0.9, radiusY * 0.9, 0, 0, Math.PI * 2);
+      rCtx.fill();
+      rCtx.restore();
+
+      bCtx.save();
+      bCtx.translate(centerX, centerY);
+      bCtx.rotate(rotation);
+      bCtx.fillStyle = '#a5a5a5';
+      bCtx.beginPath();
+      bCtx.ellipse(0, 0, radiusX * 0.9, radiusY * 0.9, 0, 0, Math.PI * 2);
+      bCtx.fill();
+      bCtx.restore();
+    };
+
+    // Foreground and sideline yellow paint splashes as seen in reference screenshot
+    drawYellowSplatter(1420, 880, 210, 130, 0.25); // Large bottom-right splash
+    drawYellowSplatter(1580, 760, 95, 60, -0.4);
+    drawYellowSplatter(450, 920, 140, 85, -0.2);   // Bottom-left splash
+    drawYellowSplatter(940, 360, 110, 65, 0.35);   // Center-top splash
+
+    // 6. REGULATION WHITE PITCH MARKINGS & YELLOW CURB DASHES
     const marginX = 110;
     const marginY = 85;
 
@@ -192,7 +268,10 @@ export class Pitch {
     };
     drawYellowDashes();
 
-    // White regulation street pitch markings
+    // 7. VIBRANT AFRICA MAP CENTER CIRCLE (Exact match to reference screenshot)
+    this.drawAfricaCenterCircle(dCtx, rCtx, bCtx, centerX, centerY, 195);
+
+    // 8. White regulation street pitch markings
     const setupLineStyle = (ctx: CanvasRenderingContext2D, color: string, lineWidth: number) => {
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
@@ -204,38 +283,54 @@ export class Pitch {
 
     [
       { ctx: dCtx, color: '#f8fafc', lineW: 7.5 },
-      { ctx: rCtx, color: '#888888', lineW: 7.5 }, // White chalk/paint is smoother
-      { ctx: bCtx, color: '#c0c0c0', lineW: 8.5 }  // Paint sits slightly proud of tarmac
+      { ctx: rCtx, color: '#888888', lineW: 7.5 },
+      { ctx: bCtx, color: '#c0c0c0', lineW: 8.5 }
     ].forEach(({ ctx, color, lineW }) => {
       setupLineStyle(ctx, color, lineW);
 
       // A. Outer Perimeter Rectangle Boundary
       ctx.strokeRect(pitchLeft, pitchTop, pitchW, pitchH);
 
-      // B. Center Kickoff Spot (solid white circle at exact center)
+      // B. Center Halfway Line
+      ctx.beginPath();
+      ctx.moveTo(centerX, pitchTop);
+      ctx.lineTo(centerX, pitchBottom);
+      ctx.stroke();
+
+      // C. Center Circle Ring (Circumference around the Africa Map)
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 195, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // D. Center Kickoff Spot (Solid white spot at center)
       ctx.beginPath();
       ctx.arc(centerX, centerY, 14, 0, Math.PI * 2);
       ctx.fill();
 
-      // C. West (Left) Penalty Area & Penalty "D" Arc
+      // E. West (Left) Penalty Area & Inner 6-Yard Goal Box
       const penaltyBoxW = 320;
       const penaltyBoxH = 680;
       ctx.strokeRect(pitchLeft, centerY - penaltyBoxH / 2, penaltyBoxW, penaltyBoxH);
+
+      const innerBoxW = 120;
+      const innerBoxH = 340;
+      ctx.strokeRect(pitchLeft, centerY - innerBoxH / 2, innerBoxW, innerBoxH);
 
       // West Penalty D-Arc facing toward center
       ctx.beginPath();
       ctx.arc(pitchLeft + penaltyBoxW, centerY, 120, -Math.PI / 2.7, Math.PI / 2.7);
       ctx.stroke();
 
-      // D. East (Right) Penalty Area & Penalty "D" Arc
+      // F. East (Right) Penalty Area & Inner 6-Yard Goal Box
       ctx.strokeRect(pitchRight - penaltyBoxW, centerY - penaltyBoxH / 2, penaltyBoxW, penaltyBoxH);
+      ctx.strokeRect(pitchRight - innerBoxW, centerY - innerBoxH / 2, innerBoxW, innerBoxH);
 
       // East Penalty D-Arc facing toward center
       ctx.beginPath();
       ctx.arc(pitchRight - penaltyBoxW, centerY, 120, (1.7 * Math.PI) / 2.7, (3.7 * Math.PI) / 2.7);
       ctx.stroke();
 
-      // E. Four Corner Arcs
+      // G. Four Corner Arcs
       const cornerRadius = 45;
       // Top-Left
       ctx.beginPath();
@@ -258,24 +353,6 @@ export class Pitch {
       ctx.stroke();
     });
 
-    // 6. SCATTERED DRIED AUTUMN LEAVES & CITY DEBRIS (Exact match to photo)
-    const leafColors = ['#b45309', '#d97706', '#ca8a04', '#78350f', '#92400e'];
-    for (let i = 0; i < 280; i++) {
-      const lx = Math.random() * width;
-      const ly = Math.random() * height;
-      const col = leafColors[Math.floor(Math.random() * leafColors.length)];
-      const size = 3 + Math.random() * 4;
-
-      dCtx.save();
-      dCtx.translate(lx, ly);
-      dCtx.rotate(Math.random() * Math.PI * 2);
-      dCtx.fillStyle = col;
-      dCtx.beginPath();
-      dCtx.ellipse(0, 0, size, size * 0.55, 0, 0, Math.PI * 2);
-      dCtx.fill();
-      dCtx.restore();
-    }
-
     const diffuseMap = new THREE.CanvasTexture(dCanvas);
     diffuseMap.wrapS = THREE.ClampToEdgeWrapping;
     diffuseMap.wrapT = THREE.ClampToEdgeWrapping;
@@ -291,9 +368,165 @@ export class Pitch {
     return { diffuseMap, roughnessMap, bumpMap };
   }
 
+  /**
+   * Draws the authentic multi-colored painted map of Africa in the center circle
+   * with distinct colored regions (West = Green, Sahara/North = Yellow, East = Orange, South = Blue/Cyan).
+   */
+  private drawAfricaCenterCircle(
+    dCtx: CanvasRenderingContext2D,
+    rCtx: CanvasRenderingContext2D,
+    bCtx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    circleRadius: number
+  ) {
+    const s = circleRadius * 0.88; // Scale factor for Africa continent outline
+
+    dCtx.save();
+    dCtx.translate(cx, cy);
+
+    // A. West Africa Region (Vibrant Emerald / Lime Green)
+    // Encompasses Nigeria, Ghana, Ivory Coast, Senegal, Guinea
+    dCtx.beginPath();
+    dCtx.moveTo(-0.15 * s, -0.15 * s);
+    dCtx.lineTo(-0.12 * s, 0.05 * s);  // Bight of Biafra
+    dCtx.lineTo(-0.45 * s, 0.12 * s);  // Gulf of Guinea coast
+    dCtx.lineTo(-0.75 * s, 0.08 * s);  // Liberia / Sierra Leone
+    dCtx.lineTo(-0.95 * s, -0.18 * s); // Dakar tip of Senegal
+    dCtx.lineTo(-0.72 * s, -0.38 * s); // Mauritania south
+    dCtx.lineTo(-0.35 * s, -0.32 * s); // Mali / Niger
+    dCtx.closePath();
+    dCtx.fillStyle = '#22c55e'; // Bright Green
+    dCtx.fill();
+
+    // Secondary emerald tint
+    dCtx.fillStyle = 'rgba(21, 128, 61, 0.35)';
+    dCtx.fill();
+
+    // B. North Africa / Sahara Region (Golden Yellow & Amber)
+    // Encompasses Morocco, Algeria, Tunisia, Libya, Northern Mauritania
+    dCtx.beginPath();
+    dCtx.moveTo(-0.72 * s, -0.38 * s);
+    dCtx.lineTo(-0.62 * s, -0.58 * s); // Morocco / Western Sahara
+    dCtx.lineTo(-0.42 * s, -0.72 * s); // Strait of Gibraltar
+    dCtx.lineTo(-0.08 * s, -0.78 * s); // Tunisia / Algeria bulge
+    dCtx.lineTo(0.18 * s, -0.62 * s);  // Gulf of Sidra
+    dCtx.lineTo(0.35 * s, -0.68 * s);  // Egypt border
+    dCtx.lineTo(0.28 * s, -0.28 * s);  // Sudan / Chad border
+    dCtx.lineTo(-0.15 * s, -0.15 * s); // Center boundary
+    dCtx.lineTo(-0.35 * s, -0.32 * s); // Mali
+    dCtx.closePath();
+    dCtx.fillStyle = '#eab308'; // Rich Golden Yellow
+    dCtx.fill();
+
+    // C. North-East & East Africa (Vivid Tangerine & Red-Orange)
+    // Encompasses Egypt, Sudan, Ethiopia, Somalia (Horn), Kenya, Uganda, Tanzania
+    dCtx.beginPath();
+    dCtx.moveTo(0.35 * s, -0.68 * s);
+    dCtx.lineTo(0.55 * s, -0.65 * s); // Sinai / Egypt
+    dCtx.lineTo(0.68 * s, -0.22 * s); // Red Sea / Bab-el-Mandeb
+    dCtx.lineTo(0.92 * s, 0.02 * s);  // Horn of Africa tip (Somalia)
+    dCtx.lineTo(0.68 * s, 0.28 * s);  // Kenya / Tanzania coast
+    dCtx.lineTo(0.48 * s, 0.45 * s);  // Mozambique north
+    dCtx.lineTo(0.15 * s, 0.25 * s);  // Great Lakes / Congo east
+    dCtx.lineTo(-0.15 * s, -0.15 * s);
+    dCtx.lineTo(0.28 * s, -0.28 * s);
+    dCtx.closePath();
+    dCtx.fillStyle = '#ea580c'; // Vibrant Orange
+    dCtx.fill();
+
+    // D. Southern Africa (Electric Royal Blue & Cyan)
+    // Encompasses Angola, Zambia, Zimbabwe, Mozambique, Botswana, Namibia, South Africa
+    dCtx.beginPath();
+    dCtx.moveTo(-0.12 * s, 0.05 * s);
+    dCtx.lineTo(0.15 * s, 0.25 * s);
+    dCtx.lineTo(0.48 * s, 0.45 * s);
+    dCtx.lineTo(0.42 * s, 0.72 * s);  // Mozambique south
+    dCtx.lineTo(0.18 * s, 0.95 * s);  // Cape of Good Hope / South Africa
+    dCtx.lineTo(-0.05 * s, 0.88 * s); // Western Cape
+    dCtx.lineTo(-0.22 * s, 0.58 * s); // Namibia coast
+    dCtx.lineTo(-0.24 * s, 0.28 * s); // Angola coast
+    dCtx.closePath();
+    dCtx.fillStyle = '#0284c7'; // Royal Blue
+    dCtx.fill();
+
+    // Secondary cyan highlight in South
+    dCtx.fillStyle = 'rgba(6, 182, 212, 0.35)';
+    dCtx.fill();
+
+    // E. Madagascar Island (Cyan / Blue)
+    dCtx.beginPath();
+    dCtx.ellipse(0.72 * s, 0.58 * s, 0.1 * s, 0.22 * s, -0.35, 0, Math.PI * 2);
+    dCtx.fillStyle = '#0284c7';
+    dCtx.fill();
+    dCtx.strokeStyle = '#0f172a';
+    dCtx.lineWidth = 2.5;
+    dCtx.stroke();
+
+    // F. Dark Charcoal Regional Boundaries & Outer Continent Outline
+    dCtx.strokeStyle = '#0f172a';
+    dCtx.lineWidth = 3.5;
+    dCtx.lineJoin = 'round';
+
+    // Outer continent path outline
+    dCtx.beginPath();
+    // North coast
+    dCtx.moveTo(-0.42 * s, -0.72 * s);
+    dCtx.lineTo(-0.08 * s, -0.78 * s);
+    dCtx.lineTo(0.18 * s, -0.62 * s);
+    dCtx.lineTo(0.55 * s, -0.65 * s);
+    // East coast & Horn
+    dCtx.lineTo(0.68 * s, -0.22 * s);
+    dCtx.lineTo(0.92 * s, 0.02 * s);
+    dCtx.lineTo(0.68 * s, 0.28 * s);
+    dCtx.lineTo(0.48 * s, 0.45 * s);
+    dCtx.lineTo(0.42 * s, 0.72 * s);
+    // South tip
+    dCtx.lineTo(0.18 * s, 0.95 * s);
+    dCtx.lineTo(-0.05 * s, 0.88 * s);
+    // West coast
+    dCtx.lineTo(-0.22 * s, 0.58 * s);
+    dCtx.lineTo(-0.24 * s, 0.28 * s);
+    dCtx.lineTo(-0.12 * s, 0.05 * s);
+    dCtx.lineTo(-0.45 * s, 0.12 * s);
+    dCtx.lineTo(-0.75 * s, 0.08 * s);
+    dCtx.lineTo(-0.95 * s, -0.18 * s);
+    dCtx.lineTo(-0.72 * s, -0.38 * s);
+    dCtx.lineTo(-0.62 * s, -0.58 * s);
+    dCtx.closePath();
+    dCtx.stroke();
+
+    // Internal regional dividing lines
+    dCtx.lineWidth = 2.2;
+    dCtx.beginPath();
+    // West boundary
+    dCtx.moveTo(-0.35 * s, -0.32 * s);
+    dCtx.lineTo(-0.15 * s, -0.15 * s);
+    dCtx.lineTo(-0.12 * s, 0.05 * s);
+    // North/East boundary
+    dCtx.moveTo(-0.15 * s, -0.15 * s);
+    dCtx.lineTo(0.28 * s, -0.28 * s);
+    dCtx.lineTo(0.35 * s, -0.68 * s);
+    // South boundary
+    dCtx.moveTo(-0.15 * s, -0.15 * s);
+    dCtx.lineTo(0.15 * s, 0.25 * s);
+    dCtx.lineTo(0.48 * s, 0.45 * s);
+    dCtx.stroke();
+
+    dCtx.restore();
+
+    // Slightly smooth roughness on paint mural
+    rCtx.save();
+    rCtx.translate(cx, cy);
+    rCtx.fillStyle = '#a0a0a0';
+    rCtx.beginPath();
+    rCtx.arc(0, 0, circleRadius * 0.85, 0, Math.PI * 2);
+    rCtx.fill();
+    rCtx.restore();
+  }
+
   // 1. Asphalt Street Football Ground
   private createAsphaltStreetGround() {
-    // Pitch surface geometry
     const pitchGeo = new THREE.PlaneGeometry(PITCH_LENGTH, PITCH_WIDTH, 48, 48);
     const { diffuseMap, roughnessMap, bumpMap } = this.createAsphaltStreetTextures();
 
@@ -311,9 +544,9 @@ export class Pitch {
     this.group.add(pitchMesh);
 
     // Surrounding Asphalt Street Apron
-    const streetApronGeo = new THREE.PlaneGeometry(PITCH_LENGTH + 18, PITCH_WIDTH + 14);
+    const streetApronGeo = new THREE.PlaneGeometry(PITCH_LENGTH + 22, PITCH_WIDTH + 18);
     const apronMat = new THREE.MeshStandardMaterial({
-      color: 0x24262a, // Deep dark street asphalt
+      color: 0x222428,
       roughness: 0.95,
       metalness: 0.02
     });
@@ -327,7 +560,7 @@ export class Pitch {
   // 2. Tubular Steel Street Goals (White metal pipes matching reference photo)
   private createStreetGoals() {
     const halfLen = PITCH_LENGTH / 2;
-    const postRadius = 0.042;
+    const postRadius = 0.045;
 
     // High-visibility pure white metal pipe
     const pipeMat = new THREE.MeshStandardMaterial({
@@ -350,32 +583,27 @@ export class Pitch {
 
       // Two vertical posts
       [-GOAL_WIDTH / 2, GOAL_WIDTH / 2].forEach((gz) => {
-        // Vertical post
         const post = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, GOAL_HEIGHT, 16), pipeMat);
         post.position.set(posX, GOAL_HEIGHT / 2, gz);
         post.castShadow = true;
         goalGroup.add(post);
 
-        // Ground runner extending backward
         const runner = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, GOAL_DEPTH, 12), pipeMat);
         runner.rotation.z = Math.PI / 2;
         runner.position.set(posX + side * (GOAL_DEPTH / 2), 0.03, gz);
         goalGroup.add(runner);
 
-        // Curved top elbow pipe transitioning backward
         const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.12, postRadius, 8, 12, Math.PI / 2), pipeMat);
         elbow.position.set(posX + side * 0.12, GOAL_HEIGHT - 0.12, gz);
         elbow.rotation.y = side === 1 ? -Math.PI / 2 : Math.PI / 2;
         elbow.rotation.z = side === 1 ? Math.PI : 0;
         goalGroup.add(elbow);
 
-        // Top depth runner
         const topRunner = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, GOAL_DEPTH - 0.12, 12), pipeMat);
         topRunner.rotation.z = Math.PI / 2;
         topRunner.position.set(posX + side * (GOAL_DEPTH / 2 + 0.06), GOAL_HEIGHT, gz);
         goalGroup.add(topRunner);
 
-        // Rear vertical support
         const rearSupport = new THREE.Mesh(new THREE.CylinderGeometry(postRadius * 0.85, postRadius * 0.85, GOAL_HEIGHT, 12), pipeMat);
         rearSupport.position.set(posX + side * GOAL_DEPTH, GOAL_HEIGHT / 2, gz);
         goalGroup.add(rearSupport);
@@ -427,264 +655,432 @@ export class Pitch {
     });
   }
 
-  // 3. Authentic Urban Street Surroundings: Sidewalk, Shopfronts, Posters, Moped, Trash Bin, Railing & Foliage
+  // 3. Complete African Street Surroundings:
+  // Mama T Provisions shop, market umbrellas, keke napep tricycles, wooden fence, sponsor banners, spectators
   private createStreetSurroundings() {
     const halfLen = PITCH_LENGTH / 2;
     const halfWid = PITCH_WIDTH / 2;
 
-    // A. NORTH (TOP) ELEVATED CONCRETE SIDEWALK & CURB
-    const sidewalkGeo = new THREE.BoxGeometry(PITCH_LENGTH + 14, 0.18, 3.2);
+    // A. Concrete sidewalk along the North Sideline
+    const sidewalkGeo = new THREE.BoxGeometry(PITCH_LENGTH + 18, 0.18, 4.2);
     const sidewalkMat = new THREE.MeshStandardMaterial({
-      color: 0x827e77, // Concrete sidewalk grey
+      color: 0x858079,
       roughness: 0.92,
       metalness: 0.05
     });
     const sidewalk = new THREE.Mesh(sidewalkGeo, sidewalkMat);
-    sidewalk.position.set(0, 0.09, -halfWid - 2.2);
+    sidewalk.position.set(0, 0.09, -halfWid - 2.8);
     sidewalk.receiveShadow = true;
     this.group.add(sidewalk);
 
     // Curb edge stone along the pitch
-    const curbGeo = new THREE.BoxGeometry(PITCH_LENGTH + 14, 0.22, 0.25);
-    const curbMat = new THREE.MeshStandardMaterial({ color: 0x5c5750, roughness: 0.95 });
+    const curbGeo = new THREE.BoxGeometry(PITCH_LENGTH + 18, 0.22, 0.3);
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x5a554e, roughness: 0.95 });
     const curb = new THREE.Mesh(curbGeo, curbMat);
     curb.position.set(0, 0.11, -halfWid - 0.7);
     curb.castShadow = true;
     curb.receiveShadow = true;
     this.group.add(curb);
 
-    // Storm drain grates along the curb
-    [-12, -4, 4, 12].forEach(gx => {
-      const drainGeo = new THREE.BoxGeometry(1.2, 0.03, 0.4);
-      const drainMat = new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.85, roughness: 0.4 });
-      const drain = new THREE.Mesh(drainGeo, drainMat);
-      drain.position.set(gx, 0.01, -halfWid - 0.48);
-      this.group.add(drain);
+    // B. MAMA T PROVISIONS SHOPFRONT & STREET BUILDINGS (Exact match to reference photo)
+    this.createMamaTProvisionsShop(halfWid);
+
+    // C. 3 VIBRANT MARKET UMBRELLAS (Blue/White striped, Yellow, Pink)
+    this.createMarketUmbrellas(halfWid);
+
+    // D. KEKE NAPEP / AUTO-RICKSHAW TRICYCLES
+    this.createKekeNapepFleet(halfWid);
+
+    // E. WOODEN SIDELINE BARRIERS & OFFICIAL SPONSOR BANNERS
+    this.createSidelineBarriersAndSponsors(halfLen, halfWid);
+
+    // F. SPECTATOR CROWD ALONG THE SIDELINE BARRIER
+    this.createSpectatorCrowd(halfLen, halfWid);
+  }
+
+  /**
+   * B. Mama T Provisions Shop building facade with signage, shelves & produce crates
+   */
+  private createMamaTProvisionsShop(halfWid: number) {
+    // 1. Mama T Provisions Signboard (Canvas Texture)
+    const signCanvas = document.createElement('canvas');
+    signCanvas.width = 1024;
+    signCanvas.height = 256;
+    const sCtx = signCanvas.getContext('2d')!;
+
+    // Yellow background with metal weathered border
+    sCtx.fillStyle = '#facc15'; // Bright Lagos Yellow
+    sCtx.fillRect(0, 0, 1024, 256);
+
+    sCtx.strokeStyle = '#09090b';
+    sCtx.lineWidth = 14;
+    sCtx.strokeRect(7, 7, 1010, 242);
+
+    // Bold text "MAMA T PROVISIONS"
+    sCtx.fillStyle = '#09090b';
+    sCtx.font = '900 84px Impact, Arial Black, sans-serif';
+    sCtx.textAlign = 'center';
+    sCtx.textBaseline = 'middle';
+    sCtx.letterSpacing = '4px';
+    sCtx.fillText('MAMA T PROVISIONS', 512, 128);
+
+    const signTex = new THREE.CanvasTexture(signCanvas);
+    const signMat = new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.45 });
+    const signMesh = new THREE.Mesh(new THREE.BoxGeometry(8.5, 1.4, 0.15), signMat);
+    signMesh.position.set(-2.5, 4.2, -halfWid - 3.8);
+    signMesh.castShadow = true;
+    this.group.add(signMesh);
+
+    // 2. Pink / Salmon Building Facade
+    const buildingWallMat = new THREE.MeshStandardMaterial({
+      color: 0xf472b6, // Vibrant warm pink stucco
+      roughness: 0.85
     });
+    const mainBuilding = new THREE.Mesh(new THREE.BoxGeometry(18, 6.5, 2.5), buildingWallMat);
+    mainBuilding.position.set(-2.5, 3.25, -halfWid - 5.2);
+    mainBuilding.castShadow = true;
+    mainBuilding.receiveShadow = true;
+    this.group.add(mainBuilding);
 
-    // B. NORTH BUILDING FACADE WITH METAL ROLL-DOWN SHOP SHUTTERS & GIG POSTERS
-    const shopWallCanvas = document.createElement('canvas');
-    shopWallCanvas.width = 1024;
-    shopWallCanvas.height = 512;
-    const sCtx = shopWallCanvas.getContext('2d')!;
+    // Adjacent turquoise/yellow building next door
+    const rightBuildingMat = new THREE.MeshStandardMaterial({ color: 0x2dd4bf, roughness: 0.88 });
+    const rightBuilding = new THREE.Mesh(new THREE.BoxGeometry(16, 6.8, 2.5), rightBuildingMat);
+    rightBuilding.position.set(14.5, 3.4, -halfWid - 5.2);
+    rightBuilding.castShadow = true;
+    this.group.add(rightBuilding);
 
-    // Brick / plaster upper facade
-    sCtx.fillStyle = '#6b584d';
-    sCtx.fillRect(0, 0, 1024, 512);
+    // Corrugated tin roof over Mama T Provisions
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x78716c, metalness: 0.65, roughness: 0.45 });
+    const roofMesh = new THREE.Mesh(new THREE.BoxGeometry(18.5, 0.15, 3.5), roofMat);
+    roofMesh.position.set(-2.5, 6.4, -halfWid - 4.4);
+    roofMesh.rotation.x = 0.15;
+    roofMesh.castShadow = true;
+    this.group.add(roofMesh);
 
-    // Brick mortar lines on upper section
-    sCtx.strokeStyle = 'rgba(215, 205, 195, 0.35)';
-    sCtx.lineWidth = 1.5;
-    for (let y = 0; y < 180; y += 14) {
-      sCtx.beginPath(); sCtx.moveTo(0, y); sCtx.lineTo(1024, y); sCtx.stroke();
+    // 3. Wooden Fruit and Plantain Display Crates on Sidewalk
+    const crateMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.85 });
+    const plantainMat = new THREE.MeshStandardMaterial({ color: 0x65a30d, roughness: 0.6 }); // Green plantains
+    const mangoMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.5 });     // Mangoes/Pineapples
+
+    [-5.8, -4.6, -3.4, -1.2, 0.0].forEach((cx, idx) => {
+      // Wooden box crate
+      const crate = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.45, 0.75), crateMat);
+      crate.position.set(cx, 0.35, -halfWid - 1.8);
+      crate.castShadow = true;
+      this.group.add(crate);
+
+      // Produce mound inside crate
+      const produceMat = idx % 2 === 0 ? plantainMat : mangoMat;
+      const produceMound = new THREE.Mesh(new THREE.DodecahedronGeometry(0.32, 1), produceMat);
+      produceMound.position.set(cx, 0.62, -halfWid - 1.8);
+      produceMound.scale.set(1.2, 0.7, 0.9);
+      produceMound.castShadow = true;
+      this.group.add(produceMound);
+    });
+  }
+
+  /**
+   * C. 3 Vibrant Market Umbrellas: Blue/White Striped, Bright Yellow, Hot Pink
+   */
+  private createMarketUmbrellas(halfWid: number) {
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x573e2a, roughness: 0.8 });
+
+    // 1. Blue & White Striped Umbrella Canvas
+    const stripedCanvas = document.createElement('canvas');
+    stripedCanvas.width = 512;
+    stripedCanvas.height = 512;
+    const stCtx = stripedCanvas.getContext('2d')!;
+    const numSlices = 8;
+    for (let i = 0; i < numSlices; i++) {
+      const a1 = (i / numSlices) * Math.PI * 2;
+      const a2 = ((i + 1) / numSlices) * Math.PI * 2;
+      stCtx.beginPath();
+      stCtx.moveTo(256, 256);
+      stCtx.arc(256, 256, 256, a1, a2);
+      stCtx.closePath();
+      stCtx.fillStyle = i % 2 === 0 ? '#1d4ed8' : '#f8fafc'; // Royal Blue and White
+      stCtx.fill();
     }
+    const stripedTex = new THREE.CanvasTexture(stripedCanvas);
+    const stripedMat = new THREE.MeshStandardMaterial({ map: stripedTex, roughness: 0.55, side: THREE.DoubleSide });
 
-    // 4 Distinct Shopfront Bays with corrugated roll-down metal shutters
-    const shutterColors = ['#475569', '#1e293b', '#1e3a8a', '#581c87'];
-    for (let b = 0; b < 4; b++) {
-      const bx = b * 256;
-      sCtx.fillStyle = '#1e1b18';
-      sCtx.fillRect(bx + 12, 170, 232, 342); // Shop frame
-
-      // Corrugated shutter metal slats
-      sCtx.fillStyle = shutterColors[b];
-      sCtx.fillRect(bx + 18, 180, 220, 332);
-
-      // Slat shadow lines
-      sCtx.strokeStyle = 'rgba(0,0,0,0.45)';
-      sCtx.lineWidth = 2;
-      for (let sy = 186; sy < 512; sy += 12) {
-        sCtx.beginPath(); sCtx.moveTo(bx + 18, sy); sCtx.lineTo(bx + 238, sy); sCtx.stroke();
-      }
-
-      // Pasted street gig posters / graffiti flyers (Yellow, red, cyan, black)
-      const posterColors = ['#facc15', '#ef4444', '#06b6d4', '#ffffff', '#fb923c'];
-      for (let p = 0; p < 3; p++) {
-        const px = bx + 30 + p * 65;
-        const py = 250 + (p % 2) * 60;
-        sCtx.fillStyle = posterColors[(b * 3 + p) % posterColors.length];
-        sCtx.fillRect(px, py, 45, 65);
-
-        // Poster header text bars
-        sCtx.fillStyle = '#09090b';
-        sCtx.fillRect(px + 4, py + 8, 37, 7);
-        sCtx.fillRect(px + 4, py + 20, 28, 4);
-        sCtx.fillRect(px + 4, py + 28, 32, 4);
-      }
-    }
-
-    const shopTex = new THREE.CanvasTexture(shopWallCanvas);
-    const shopWallMat = new THREE.MeshStandardMaterial({ map: shopTex, roughness: 0.88 });
-    const northBuilding = new THREE.Mesh(new THREE.BoxGeometry(PITCH_LENGTH + 14, 8, 1), shopWallMat);
-    northBuilding.position.set(0, 4.0, -halfWid - 4.3);
-    northBuilding.castShadow = true;
-    northBuilding.receiveShadow = true;
-    this.group.add(northBuilding);
-
-    // C. PARKED MOPED / SCOOTER ON SIDEWALK (Exact match to reference photo top-right)
-    const mopedGroup = new THREE.Group();
-    mopedGroup.position.set(13.5, 0.18, -halfWid - 1.8);
-    mopedGroup.rotation.y = 0.35; // Parked at angle
-
-    const rubberMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
-    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 });
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 }); // Electric blue scooter body
-
-    // Wheels
-    const wheelGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.08, 16);
-    const frontWheel = new THREE.Mesh(wheelGeo, rubberMat);
-    frontWheel.rotation.x = Math.PI / 2;
-    frontWheel.position.set(0.65, 0.24, 0);
-    mopedGroup.add(frontWheel);
-
-    const rearWheel = frontWheel.clone();
-    rearWheel.position.set(-0.65, 0.24, 0);
-    mopedGroup.add(rearWheel);
-
-    // Scooter chassis body
-    const bodyGeo = new THREE.BoxGeometry(0.85, 0.35, 0.32);
-    const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-    bodyMesh.position.set(-0.1, 0.42, 0);
-    mopedGroup.add(bodyMesh);
-
-    // Seat
-    const seatGeo = new THREE.BoxGeometry(0.55, 0.12, 0.28);
-    const seatMesh = new THREE.Mesh(seatGeo, rubberMat);
-    seatMesh.position.set(-0.2, 0.65, 0);
-    mopedGroup.add(seatMesh);
-
-    // Steering column & handlebars
-    const columnGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.65, 8);
-    const columnMesh = new THREE.Mesh(columnGeo, chromeMat);
-    columnMesh.position.set(0.55, 0.62, 0);
-    columnMesh.rotation.z = -0.25;
-    mopedGroup.add(columnMesh);
-
-    const handlebarGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.58, 8);
-    const handlebarMesh = new THREE.Mesh(handlebarGeo, chromeMat);
-    handlebarMesh.rotation.x = Math.PI / 2;
-    handlebarMesh.position.set(0.62, 0.92, 0);
-    mopedGroup.add(handlebarMesh);
-
-    this.group.add(mopedGroup);
-
-    // D. GREEN STREET WHEELIE TRASH BIN (Next to scooter, matching photo)
-    const binGroup = new THREE.Group();
-    binGroup.position.set(15.8, 0.18, -halfWid - 2.1);
-    const binMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.65 });
-    const binBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.95, 0.55), binMat);
-    binBody.position.y = 0.48;
-    binBody.castShadow = true;
-    binGroup.add(binBody);
-
-    const binLid = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 0.6), binMat);
-    binLid.position.y = 0.98;
-    binGroup.add(binLid);
-    this.group.add(binGroup);
-
-    // E. EAST WALL: VIBRANT GEOMETRIC GRAFFITI STREET MURAL (Exact match to photo top-right)
-    const muralCanvas = document.createElement('canvas');
-    muralCanvas.width = 1024;
-    muralCanvas.height = 512;
-    const mCtx = muralCanvas.getContext('2d')!;
-
-    // Brick mortar base
-    mCtx.fillStyle = '#26221f';
-    mCtx.fillRect(0, 0, 1024, 512);
-
-    const graffitiColors = [
-      '#ec4899', '#06b6d4', '#facc15', '#f97316', '#8b5cf6', '#2563eb', '#84cc16', '#ef4444'
+    // Umbrella specs from reference screenshot
+    const umbrellas = [
+      { x: -6.2, z: -halfWid - 1.9, mat: stripedMat, tiltZ: 0.06 },
+      { x: -2.2, z: -halfWid - 1.9, mat: new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.55 }), tiltZ: -0.04 }, // Yellow
+      { x: 1.8, z: -halfWid - 1.8, mat: new THREE.MeshStandardMaterial({ color: 0xdb2777, roughness: 0.55 }), tiltZ: 0.05 }    // Pink
     ];
 
-    // Diagonal chevron geometric art
-    for (let x = -100; x < 1150; x += 95) {
-      for (let y = 0; y < 512; y += 85) {
-        mCtx.fillStyle = graffitiColors[Math.floor(Math.random() * graffitiColors.length)];
-        mCtx.beginPath();
-        mCtx.moveTo(x, y);
-        mCtx.lineTo(x + 120, y + 80);
-        mCtx.lineTo(x + 85, y + 140);
-        mCtx.lineTo(x - 35, y + 60);
-        mCtx.closePath();
-        mCtx.fill();
+    umbrellas.forEach(u => {
+      const uGroup = new THREE.Group();
+      uGroup.position.set(u.x, 0.18, u.z);
+      uGroup.rotation.z = u.tiltZ;
 
-        // Contrasting triangular accents
-        mCtx.fillStyle = graffitiColors[Math.floor(Math.random() * graffitiColors.length)];
-        mCtx.beginPath();
-        mCtx.moveTo(x + 35, y + 25);
-        mCtx.lineTo(x + 75, y + 65);
-        mCtx.lineTo(x + 10, y + 75);
-        mCtx.closePath();
-        mCtx.fill();
+      // Vertical pole
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 2.8, 8), poleMat);
+      pole.position.y = 1.4;
+      pole.castShadow = true;
+      uGroup.add(pole);
+
+      // Umbrella canopy cone
+      const canopy = new THREE.Mesh(new THREE.ConeGeometry(1.65, 0.65, 8, 1, true), u.mat);
+      canopy.position.y = 2.7;
+      canopy.castShadow = true;
+      uGroup.add(canopy);
+
+      this.group.add(uGroup);
+    });
+  }
+
+  /**
+   * D. Parked Keke Napep / Auto-rickshaw Tricycles in background street
+   */
+  private createKekeNapepFleet(halfWid: number) {
+    const createKeke = (x: number, z: number, angle: number, mainColor: number) => {
+      const keke = new THREE.Group();
+      keke.position.set(x, 0.18, z);
+      keke.rotation.y = angle;
+
+      const bodyMat = new THREE.MeshStandardMaterial({ color: mainColor, roughness: 0.45 });
+      const blackTrimMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.7 });
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.9 });
+      const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.2 });
+
+      // Chassis Body
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.65, 2.2), bodyMat);
+      chassis.position.y = 0.55;
+      chassis.castShadow = true;
+      keke.add(chassis);
+
+      // Roof Canopy
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.1, 2.25), blackTrimMat);
+      roof.position.y = 1.75;
+      roof.castShadow = true;
+      keke.add(roof);
+
+      // 4 Canopy Pillars
+      [-0.6, 0.6].forEach(px => {
+        [-0.95, 0.95].forEach(pz => {
+          const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.1, 8), chromeMat);
+          pillar.position.set(px, 1.2, pz);
+          keke.add(pillar);
+        });
+      });
+
+      // Front wheel (1 center wheel)
+      const frontWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.12, 16), wheelMat);
+      frontWheel.rotation.z = Math.PI / 2;
+      frontWheel.position.set(0, 0.24, 0.95);
+      frontWheel.castShadow = true;
+      keke.add(frontWheel);
+
+      // Rear wheels (2 side wheels)
+      [-0.62, 0.62].forEach(rx => {
+        const rearWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.12, 16), wheelMat);
+        rearWheel.rotation.z = Math.PI / 2;
+        rearWheel.position.set(rx, 0.25, -0.75);
+        rearWheel.castShadow = true;
+        keke.add(rearWheel);
+      });
+
+      // Front round headlight
+      const light = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 12), chromeMat);
+      light.rotation.x = Math.PI / 2;
+      light.position.set(0, 0.72, 1.12);
+      keke.add(light);
+
+      this.group.add(keke);
+    };
+
+    // 3 Keke Napep tricycles parked along alley
+    createKeke(8.5, -halfWid - 3.2, 0.22, 0xfacc15);  // Yellow Keke Napep
+    createKeke(12.6, -halfWid - 3.0, -0.15, 0x9333ea); // Purple/Magenta Keke Napep
+    createKeke(16.2, -halfWid - 3.4, 0.1, 0x0f766e);   // Dark Teal Keke Napep
+  }
+
+  /**
+   * E. Sideline Rustic Wooden Barrier & Official Sponsor Advertising Boards
+   * (usebuddy.app, Cardify Crypto & Giftcard, Cardify logo)
+   */
+  private createSidelineBarriersAndSponsors(halfLen: number, halfWid: number) {
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x634d3d, roughness: 0.9 });
+
+    // Low wooden fence along North sideline
+    for (let x = -halfLen; x <= halfLen; x += 3.2) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.95, 0.14), woodMat);
+      post.position.set(x, 0.48, -halfWid - 0.55);
+      post.castShadow = true;
+      this.group.add(post);
+    }
+    const northRailTop = new THREE.Mesh(new THREE.BoxGeometry(PITCH_LENGTH + 2, 0.08, 0.12), woodMat);
+    northRailTop.position.set(0, 0.85, -halfWid - 0.55);
+    this.group.add(northRailTop);
+
+    const northRailMid = new THREE.Mesh(new THREE.BoxGeometry(PITCH_LENGTH + 2, 0.08, 0.12), woodMat);
+    northRailMid.position.set(0, 0.45, -halfWid - 0.55);
+    this.group.add(northRailMid);
+
+    // 1. USEBUDDY.APP SPONSOR BANNER (Sideline Left - Dark Green WhatsApp marketing)
+    const buddyCanvas = document.createElement('canvas');
+    buddyCanvas.width = 1024;
+    buddyCanvas.height = 256;
+    const buCtx = buddyCanvas.getContext('2d')!;
+    buCtx.fillStyle = '#064e3b'; // Deep emerald green
+    buCtx.fillRect(0, 0, 1024, 256);
+
+    // Green WhatsApp icon bubble
+    buCtx.fillStyle = '#22c55e';
+    buCtx.beginPath();
+    buCtx.arc(95, 128, 55, 0, Math.PI * 2);
+    buCtx.fill();
+    buCtx.fillStyle = '#ffffff';
+    buCtx.font = 'bold 50px sans-serif';
+    buCtx.textAlign = 'center';
+    buCtx.textBaseline = 'middle';
+    buCtx.fillText('💬', 95, 128);
+
+    // Brand text
+    buCtx.textAlign = 'left';
+    buCtx.fillStyle = '#22c55e';
+    buCtx.font = '900 68px Arial Black, sans-serif';
+    buCtx.fillText('usebuddy.app', 180, 95);
+
+    buCtx.fillStyle = '#ffffff';
+    buCtx.font = 'bold 38px sans-serif';
+    buCtx.fillText('Buddy Make WhatsApp your best marketing channel.', 180, 168);
+
+    const buddyTex = new THREE.CanvasTexture(buddyCanvas);
+    const buddyMat = new THREE.MeshStandardMaterial({ map: buddyTex, roughness: 0.4 });
+    const buddyMesh = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.9, 0.05), buddyMat);
+    buddyMesh.position.set(-10.2, 0.55, -halfWid - 0.52);
+    buddyMesh.castShadow = true;
+    this.group.add(buddyMesh);
+
+    // 2. CARDIFY CRYPTO & GIFTCARD BANNER (Sideline Right - Black & Yellow)
+    const cardifyCanvas = document.createElement('canvas');
+    cardifyCanvas.width = 1024;
+    cardifyCanvas.height = 256;
+    const cdCtx = cardifyCanvas.getContext('2d')!;
+    cdCtx.fillStyle = '#111827'; // Dark charcoal black
+    cdCtx.fillRect(0, 0, 1024, 256);
+
+    // Cardify logo icon
+    cdCtx.fillStyle = '#eab308';
+    cdCtx.font = 'bold 65px sans-serif';
+    cdCtx.textAlign = 'center';
+    cdCtx.textBaseline = 'middle';
+    cdCtx.fillText('⛊', 85, 128);
+
+    cdCtx.textAlign = 'left';
+    cdCtx.fillStyle = '#ffffff';
+    cdCtx.font = 'bold 44px sans-serif';
+    cdCtx.fillText('Sell Crypto & Giftcard for', 150, 95);
+
+    cdCtx.fillStyle = '#eab308'; // Yellow rate
+    cdCtx.font = '900 50px Arial Black, sans-serif';
+    cdCtx.fillText('N1350/$', 740, 95);
+
+    cdCtx.fillStyle = '#f8fafc';
+    cdCtx.font = 'bold 46px sans-serif';
+    cdCtx.fillText('www.cardify.co', 150, 168);
+
+    const cardifyTex = new THREE.CanvasTexture(cardifyCanvas);
+    const cardifyMat = new THREE.MeshStandardMaterial({ map: cardifyTex, roughness: 0.4 });
+    const cardifyMesh = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.9, 0.05), cardifyMat);
+    cardifyMesh.position.set(6.8, 0.55, -halfWid - 0.52);
+    cardifyMesh.castShadow = true;
+    this.group.add(cardifyMesh);
+
+    // 3. CARDIFY LOGO BANNER NEXT TO GOAL
+    const miniCardifyCanvas = document.createElement('canvas');
+    miniCardifyCanvas.width = 512;
+    miniCardifyCanvas.height = 180;
+    const mcCtx = miniCardifyCanvas.getContext('2d')!;
+    mcCtx.fillStyle = '#0f172a';
+    mcCtx.fillRect(0, 0, 512, 180);
+    mcCtx.fillStyle = '#ffffff';
+    mcCtx.font = '900 68px Arial Black, sans-serif';
+    mcCtx.textAlign = 'center';
+    mcCtx.textBaseline = 'middle';
+    mcCtx.fillText('cardify', 256, 90);
+
+    const miniCardifyTex = new THREE.CanvasTexture(miniCardifyCanvas);
+    const miniCardifyMat = new THREE.MeshStandardMaterial({ map: miniCardifyTex, roughness: 0.4 });
+    const miniCardifyMesh = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.85, 0.05), miniCardifyMat);
+    miniCardifyMesh.position.set(13.8, 0.55, -halfWid - 0.52);
+    this.group.add(miniCardifyMesh);
+  }
+
+  /**
+   * F. Spectator Crowd along the sidelines watching the game
+   */
+  private createSpectatorCrowd(halfLen: number, halfWid: number) {
+    const skinTones = [0x3d2314, 0x4a2c17, 0x5a371e, 0x2e190c];
+    const shirtColors = [
+      0xfacc15, // Yellow
+      0x15803d, // Green
+      0xec4899, // Pink
+      0x0284c7, // Royal Blue
+      0xf97316, // Orange
+      0xf8fafc, // White
+      0x0f766e, // Teal
+      0x8b5cf6  // Purple
+    ];
+
+    const crowdGroup = new THREE.Group();
+    const numSpectators = 38;
+
+    for (let i = 0; i < numSpectators; i++) {
+      const spec = new THREE.Group();
+      const posX = -halfLen + 2.5 + (i / numSpectators) * (PITCH_LENGTH - 4.5) + (Math.random() - 0.5) * 0.4;
+      const posZ = -halfWid - 1.2 - Math.random() * 0.9;
+      const height = 1.65 + (Math.random() - 0.5) * 0.2;
+
+      const skinMat = new THREE.MeshStandardMaterial({
+        color: skinTones[Math.floor(Math.random() * skinTones.length)],
+        roughness: 0.75
+      });
+      const shirtMat = new THREE.MeshStandardMaterial({
+        color: shirtColors[Math.floor(Math.random() * shirtColors.length)],
+        roughness: 0.6
+      });
+      const pantsMat = new THREE.MeshStandardMaterial({
+        color: Math.random() > 0.5 ? 0x1e293b : 0x334155,
+        roughness: 0.7
+      });
+
+      // Torso / Shirt
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.58, 0.26), shirtMat);
+      torso.position.y = height * 0.65;
+      torso.castShadow = true;
+      spec.add(torso);
+
+      // Head
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 8), skinMat);
+      head.position.y = height * 0.94;
+      head.castShadow = true;
+      spec.add(head);
+
+      // Legs / Pants
+      const legs = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.65, 0.22), pantsMat);
+      legs.position.y = height * 0.32;
+      legs.castShadow = true;
+      spec.add(legs);
+
+      // Random hat / cap on some spectators
+      if (Math.random() > 0.6) {
+        const hatMat = new THREE.MeshStandardMaterial({ color: 0x09090b });
+        const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.06, 8), hatMat);
+        hat.position.y = height + 0.02;
+        spec.add(hat);
       }
+
+      spec.position.set(posX, 0.18, posZ);
+      // Face slightly toward pitch center
+      spec.rotation.y = (Math.random() - 0.5) * 0.35;
+      crowdGroup.add(spec);
     }
 
-    // Heavy graphic outline stencils
-    mCtx.strokeStyle = '#09090b';
-    mCtx.lineWidth = 4;
-    for (let x = 0; x < 1024; x += 130) {
-      mCtx.beginPath();
-      mCtx.moveTo(x, 0);
-      mCtx.lineTo(x + 180, 512);
-      mCtx.stroke();
-    }
-
-    const muralTex = new THREE.CanvasTexture(muralCanvas);
-    const eastWallMat = new THREE.MeshStandardMaterial({ map: muralTex, roughness: 0.85 });
-    const eastWall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 7.5, PITCH_WIDTH + 8), eastWallMat);
-    eastWall.position.set(halfLen + 2.5, 3.75, 0);
-    eastWall.castShadow = true;
-    eastWall.receiveShadow = true;
-    this.group.add(eastWall);
-
-    // F. WEST WALL: URBAN WEATHERED BRICK WALL
-    const westWallMat = new THREE.MeshStandardMaterial({ color: 0x4d3b32, roughness: 0.95 });
-    const westWall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 7.5, PITCH_WIDTH + 8), westWallMat);
-    westWall.position.set(-halfLen - 2.5, 3.75, 0);
-    westWall.castShadow = true;
-    westWall.receiveShadow = true;
-    this.group.add(westWall);
-
-    // G. SOUTH FOREGROUND: BLACK WROUGHT-IRON STREET RAILING & CORNER FOLIAGE
-    const railingMat = new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.8, roughness: 0.35 });
-    const railingGroup = new THREE.Group();
-    const railingY = 0.55;
-    const railingZ = halfWid + 0.9;
-
-    // Horizontal top handrail bar
-    const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, PITCH_LENGTH + 6, 12), railingMat);
-    topBar.rotation.z = Math.PI / 2;
-    topBar.position.set(0, railingY + 0.45, railingZ);
-    railingGroup.add(topBar);
-
-    // Horizontal bottom rail
-    const bottomBar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, PITCH_LENGTH + 6, 12), railingMat);
-    bottomBar.rotation.z = Math.PI / 2;
-    bottomBar.position.set(0, railingY - 0.4, railingZ);
-    railingGroup.add(bottomBar);
-
-    // Vertical railing pickets every 0.6m
-    for (let rx = -halfLen - 2; rx <= halfLen + 2; rx += 0.6) {
-      const picket = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.95, 8), railingMat);
-      picket.position.set(rx, railingY, railingZ);
-      picket.castShadow = true;
-      railingGroup.add(picket);
-    }
-    this.group.add(railingGroup);
-
-    // Green tree hedge / leaves peering over railing at bottom-left corner (matching photo)
-    const foliageMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.85 });
-    for (let i = 0; i < 8; i++) {
-      const leafCluster = new THREE.Mesh(
-        new THREE.SphereGeometry(0.38 + Math.random() * 0.25, 8, 8),
-        foliageMat
-      );
-      leafCluster.position.set(
-        -halfLen - 1.5 + Math.random() * 2.2,
-        0.5 + Math.random() * 0.7,
-        halfWid + 0.7 + Math.random() * 0.8
-      );
-      this.group.add(leafCluster);
-    }
+    this.group.add(crowdGroup);
   }
 }

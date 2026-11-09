@@ -58,12 +58,12 @@ export const TEAMS: TeamInfo[] = [
     nickname: 'Cape Flats Ballers',
     district: 'Mitchells Plain',
     shortName: 'MIT',
-    primaryColor: '#ec4899', // Vibrant Magenta / Pink Jersey
-    secondaryColor: '#2563eb', // Royal Blue Shorts
-    accentColor: '#3b82f6', // Royal Blue Cleats
+    primaryColor: '#2563eb', // Royal Blue Jersey
+    secondaryColor: '#ec4899', // Vibrant Hot Pink Shorts
+    accentColor: '#ec4899', // Hot Pink Trim & Socks
     kitStyle: 'solid',
     playstyle: 'Technical Tiki-Taka & Skillful Small-Sided Play',
-    playstyleDescription: 'Flashy pink and blue kits with pinpoint passing and sharp shooting.',
+    playstyleDescription: 'Flashy electric blue and pink kits with pinpoint passing and sharp shooting.',
     stats: {
       speed: 1.15,
       stamina: 1.15,

@@ -77,6 +77,17 @@ export const Minimap: React.FC<MinimapProps> = ({ players, ball, homeTeam, awayT
     ctx.lineWidth = 1.2;
     ctx.strokeRect(padX, padY, pitchW, pitchH);
 
+    // Center Line
+    ctx.beginPath();
+    ctx.moveTo(width / 2, padY);
+    ctx.lineTo(width / 2, padY + pitchH);
+    ctx.stroke();
+
+    // Center Circle
+    ctx.beginPath();
+    ctx.arc(width / 2, padY + pitchH / 2, 14, 0, Math.PI * 2);
+    ctx.stroke();
+
     // Center Spot
     ctx.beginPath();
     ctx.arc(width / 2, padY + pitchH / 2, 2.5, 0, Math.PI * 2);
