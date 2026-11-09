@@ -1,0 +1,15 @@
+/* Street football custom styling */
+:root {
+  --primary-green: #008751;
+  --pitch-dust: #b36b41;
+  --street-gold: #fbbf24;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #09090b;
+}
