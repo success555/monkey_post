@@ -6,6 +6,8 @@ node_modules/
 # Production build artifacts
 dist/
 dist-ssr/
+.next/
+out/
 *.local
 
 # Environment variables
