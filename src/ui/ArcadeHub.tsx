@@ -39,7 +39,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(authStore.getCurrentUser());
 
-  // Mobile horizontal (landscape) view detection (< 520px height)
+  // Mobile horizontal (landscape) view detection (< 620px height)
   const [isMobileLandscape, setIsMobileLandscape] = useState<boolean>(false);
   const [showHeroInLandscape, setShowHeroInLandscape] = useState<boolean>(false);
 
@@ -47,7 +47,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
     const handleCheckLandscape = () => {
       if (typeof window === 'undefined') return;
       const isLandscape = window.innerWidth > window.innerHeight;
-      const isShortHeight = window.innerHeight <= 540;
+      const isShortHeight = window.innerHeight <= 620;
       setIsMobileLandscape(isLandscape && isShortHeight);
     };
     handleCheckLandscape();
@@ -117,15 +117,14 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-40 bg-zinc-950 text-white flex flex-col overflow-y-auto overflow-x-hidden select-none font-sans scrollable"
-      style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+      className="relative min-h-screen w-full bg-zinc-950 text-white flex flex-col font-sans select-none overflow-x-hidden"
     >
       {/* Background Street Glow & Vignette */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-600/15 via-zinc-950/90 to-black pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none" />
 
       {/* TOP DASHBOARD NAVIGATION BAR */}
-      <header className="relative z-10 w-full px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-white/10 bg-black/75 backdrop-blur-md flex items-center justify-between shrink-0">
+      <header className="relative z-10 w-full px-3 sm:px-6 py-2 sm:py-3 border-b border-white/10 bg-black/80 backdrop-blur-md flex items-center justify-between shrink-0 mobile-landscape-compact-header">
         {/* Left: Brand Logo & Title */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-lg sm:text-xl shadow-lg shadow-amber-500/20 shrink-0">
@@ -133,54 +132,53 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
           </div>
           <div>
             <div className="flex items-center space-x-1.5 sm:space-x-2">
-              <h1 className="font-display font-black text-sm sm:text-lg tracking-wider text-white uppercase drop-shadow-md">
+              <h1 className="font-display font-black text-xs sm:text-base md:text-lg tracking-wider text-white uppercase drop-shadow-md whitespace-nowrap">
                 NAIJA STREET ARCADE
               </h1>
               <span className="text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-400 text-black uppercase tracking-wider">
-                DASHBOARD
+                HUB
               </span>
             </div>
-            <p className="text-[9.5px] sm:text-xs text-zinc-400 font-sans hidden xs:block">
+            <p className="text-[9.5px] sm:text-xs text-zinc-400 font-sans hidden md:block">
               Nigeria's #1 3D Street Sports & Classic Games Arena
             </p>
           </div>
         </div>
 
         {/* Right: User Profile, Admin Portal, Audio & Add Game */}
-        <div className="flex items-center space-x-1.5 sm:space-x-2.5">
+        <div className="flex items-center space-x-1 sm:space-x-2">
           {/* USER PROFILE PILL OR LOGIN BUTTON */}
           {currentUser ? (
             <button
               onClick={() => setShowProfileModal(true)}
-              className="flex items-center space-x-1.5 sm:space-x-2 p-1 sm:pr-3 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 transition-all active:scale-95 shadow-md"
+              className="flex items-center space-x-1 sm:space-x-1.5 p-1 sm:pr-2.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 transition-all active:scale-95 shadow-md"
             >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-sm sm:text-base shrink-0">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-xs sm:text-sm shrink-0">
                 {currentUser.avatar}
               </div>
               <div className="text-left hidden sm:block">
-                <div className="text-xs font-bold text-white leading-tight truncate max-w-[100px]">
+                <div className="text-[11px] font-bold text-white leading-tight truncate max-w-[80px]">
                   {currentUser.displayName}
                 </div>
-                <div className="text-[10px] text-amber-400 font-mono font-bold">
+                <div className="text-[9px] text-amber-400 font-mono font-bold">
                   🪙 {currentUser.streetCoins.toLocaleString()}
                 </div>
               </div>
             </button>
           ) : (
-            <div className="flex items-center space-x-1 sm:space-x-1.5">
+            <div className="flex items-center space-x-1">
               <a
                 href="/sign-in"
-                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-bold transition-all active:scale-95 flex items-center space-x-1"
+                className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-[11px] font-bold transition-all active:scale-95 flex items-center space-x-1"
               >
-                <User className="w-3.5 h-3.5 text-amber-400" />
+                <User className="w-3 h-3 text-amber-400" />
                 <span>Sign In</span>
               </a>
               <a
                 href="/sign-up"
-                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-black text-xs font-black uppercase tracking-wider shadow-md shadow-amber-400/20 active:scale-95 transition-all flex items-center space-x-1"
+                className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-black text-[11px] font-black uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center space-x-1"
               >
                 <span>Sign Up</span>
-                <span className="text-[9px] bg-black text-amber-400 font-mono px-1 rounded font-bold hidden xs:inline">+1.5K</span>
               </a>
             </div>
           )}
@@ -188,39 +186,40 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
           {/* ADMIN PORTAL BUTTON */}
           <button
             onClick={handleAdminClick}
-            className={`px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1 transition-all active:scale-95 border shadow-md ${
+            className={`px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg text-[11px] font-bold flex items-center space-x-1 transition-all active:scale-95 border shadow-md ${
               currentUser?.role === 'admin'
-                ? 'bg-amber-500 text-black border-amber-400 font-black shadow-amber-500/20'
+                ? 'bg-amber-500 text-black border-amber-400 font-black'
                 : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 border-white/10'
             }`}
             title="Arcade Administrator Control Center"
           >
-            <Shield className="w-3.5 h-3.5 text-amber-400" />
+            <Shield className="w-3 h-3 text-amber-400" />
             <span className="hidden sm:inline">Admin</span>
           </button>
 
           {/* Add Game Guide */}
           <button
             onClick={() => setShowAddGameModal(true)}
-            className="p-1.5 sm:p-2 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 border border-white/10 text-amber-400 active:scale-95 transition-all shadow-md"
+            className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-[11px] font-bold active:scale-95 transition-all shadow-md flex items-center space-x-1"
             title="How to add custom games"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden xs:inline">+ Add Game</span>
           </button>
 
           {/* Sound Toggle */}
           <button
             onClick={onToggleMute}
-            className="p-1.5 sm:p-2 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 border border-white/10 text-white active:scale-95 transition-all shadow-md"
+            className="p-1 sm:p-1.5 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-white active:scale-95 transition-all shadow-md"
             title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
           >
-            {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+            {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
           </button>
         </div>
       </header>
 
       {/* DASHBOARD NAV TABS */}
-      <div className="relative z-10 w-full px-3 sm:px-6 py-2 border-b border-white/5 bg-zinc-950/80 backdrop-blur-sm shrink-0">
+      <div className="relative z-10 w-full px-3 sm:px-6 py-1 sm:py-1.5 border-b border-white/5 bg-zinc-950/80 backdrop-blur-sm shrink-0 mobile-landscape-compact-tabs">
         <div className="max-w-6xl mx-auto flex items-center justify-between overflow-x-auto no-scrollbar">
           <div className="flex items-center space-x-1 sm:space-x-2">
             {[
@@ -235,13 +234,13 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => setActiveHubTab(tab.id as any)}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`flex items-center space-x-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap ${
                     isActive
                       ? 'bg-amber-500 text-black font-black shadow-md'
                       : 'text-zinc-400 hover:text-white bg-zinc-900/60'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-3 h-3" />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -251,15 +250,15 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
       </div>
 
       {/* MAIN DASHBOARD CONTENT AREA */}
-      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5 flex flex-col space-y-4 sm:space-y-6">
+      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-2.5 sm:py-5 flex flex-col space-y-3 sm:space-y-5">
         {/* ======================================================== */}
         {/* TAB 1: ALL GAMES CATALOG */}
         {/* ======================================================== */}
         {activeHubTab === 'games' && (
           <>
-            {/* GAMER WELCOME HUD STRIP (When Logged in) */}
+            {/* GAMER WELCOME HUD STRIP (Hidden on mobile horizontal view to save screen real estate) */}
             {currentUser && (
-              <div className="p-3 sm:p-4 rounded-2xl bg-zinc-900/80 border border-white/10 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+              <div className="hidden md:flex mobile-landscape-hide p-3 sm:p-4 rounded-2xl bg-zinc-900/80 border border-white/10 backdrop-blur-md flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
                 <div className="flex items-center space-x-3">
                   <div className="text-2xl">{currentUser.avatar}</div>
                   <div>
@@ -289,49 +288,54 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
 
             {/* SPOTLIGHT FEATURED BANNER */}
             {isMobileLandscape && !showHeroInLandscape ? (
-              /* COMPACT 48px QUICK-PLAY BAR FOR MOBILE LANDSCAPE (Frees full viewport for all 6 games) */
-              <div className="rounded-2xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-zinc-900 to-black p-2 shadow-lg flex items-center justify-between gap-2 shrink-0">
+              /* COMPACT QUICK-PLAY BAR FOR MOBILE LANDSCAPE (Leaves room for all 6 games on screen!) */
+              <div className="rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-zinc-900 to-black p-2 sm:p-2.5 shadow-lg flex items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center space-x-2 truncate">
-                  <span className="text-xl shrink-0">⚽</span>
+                  <div className="w-8 h-8 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center text-lg shrink-0">
+                    ⚽
+                  </div>
                   <div className="truncate">
                     <div className="flex items-center space-x-1.5">
                       <span className="font-display font-black text-xs text-amber-400 truncate">FEATURED: MONKEY POST 3D</span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500 text-black font-black uppercase">LIVE</span>
+                      <span className="text-[8.5px] px-1.5 py-0.2 rounded bg-emerald-500 text-black font-black uppercase">LIVE NOW</span>
                     </div>
-                    <p className="text-[10px] text-zinc-400 truncate">3D African street football on Lagos asphalt • Mama T Provisions</p>
+                    <p className="text-[10px] text-zinc-400 truncate font-sans">
+                      3D African street football on Lagos asphalt • 1-2 Players
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-1.5 shrink-0">
                   <button
                     onClick={() => handleLaunchGame('monkey_post')}
-                    className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-yellow-300 text-black font-display font-black text-[11px] uppercase tracking-wider shadow active:scale-95 flex items-center space-x-1"
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-[11px] uppercase tracking-wider shadow-md active:scale-95 flex items-center space-x-1"
                   >
                     <Play className="w-3 h-3 fill-current" />
-                    <span>PLAY</span>
+                    <span>PLAY NOW</span>
                   </button>
                   <button
                     onClick={() => setShowHeroInLandscape(true)}
                     className="px-2 py-1.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white text-[10px] font-bold"
+                    title="View Full Game Overview"
                   >
-                    Info
+                    Info ▼
                   </button>
                 </div>
               </div>
             ) : (
-              /* FULL SPOTLIGHT HERO BANNER */
-              <div className="relative rounded-2xl sm:rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-emerald-600/20 to-zinc-900/90 p-3 sm:p-6 shadow-2xl overflow-hidden group">
+              /* FULL SPOTLIGHT HERO BANNER (Matches Image 1 reference) */
+              <div className="relative rounded-2xl sm:rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-emerald-600/20 to-zinc-900/90 p-3.5 sm:p-6 shadow-2xl overflow-hidden group">
                 {isMobileLandscape && (
                   <button
                     onClick={() => setShowHeroInLandscape(false)}
-                    className="absolute top-2 right-2 z-20 px-2 py-1 rounded-lg bg-zinc-800/90 text-zinc-300 text-[10px] font-bold"
+                    className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-md bg-zinc-800/90 text-zinc-300 text-[10px] font-bold hover:bg-zinc-700"
                   >
-                    Collapse ✕
+                    Collapse ▲
                   </button>
                 )}
                 <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 sm:w-48 h-32 sm:h-48 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-6">
-                  <div className="flex-1 space-y-1.5 sm:space-y-2.5">
+                  <div className="flex-1 space-y-1.5 sm:space-y-2">
                     <div className="flex items-center space-x-2">
                       <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-lg shadow-emerald-500/30 flex items-center space-x-1">
                         <Sparkles className="w-2.5 h-2.5" />
@@ -342,7 +346,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                       </span>
                     </div>
 
-                    <h2 className="font-display font-black text-xl sm:text-3xl text-white tracking-wide">
+                    <h2 className="font-display font-black text-lg sm:text-2xl md:text-3xl text-white tracking-wide">
                       MONKEY POST 3D
                     </h2>
 
@@ -352,7 +356,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
 
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
                       <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-zinc-300">
-                        👥 1 - 2 Players (Local & Online)
+                        👥 1-2 Players (Local & Online)
                       </span>
                       <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-amber-300">
                         🏆 4 Game Modes
@@ -366,7 +370,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                   <div className="shrink-0 flex sm:flex-col justify-end">
                     <button
                       onClick={() => handleLaunchGame('monkey_post')}
-                      className="w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all active:scale-95 group-hover:scale-105"
+                      className="w-full sm:w-auto px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all active:scale-95 group-hover:scale-105"
                     >
                       <Play className="w-4 h-4 fill-current" />
                       <span>PLAY MONKEY POST NOW</span>
@@ -377,14 +381,19 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
             )}
 
             {/* CATEGORY FILTER TABS & CATALOG HEADER */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
-              <div className="flex items-center space-x-2">
-                <h3 className="font-display font-black text-sm sm:text-lg text-white tracking-wide">
-                  ALL GAMES CATALOG
-                </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
-                  {filteredGames.length} GAMES PLAYABLE
-                </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2.5 pt-1">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-display font-black text-sm sm:text-lg text-white tracking-wide">
+                    ALL GAMES CATALOG
+                  </h3>
+                  <span className="text-[9.5px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
+                    {filteredGames.length} GAMES PLAYABLE
+                  </span>
+                </div>
+                <p className="text-[10px] sm:text-xs text-zinc-400 font-sans hidden sm:block">
+                  Select Monkey Post to start playing or explore upcoming games
+                </p>
               </div>
 
               {/* Category Pills */}
@@ -399,84 +408,63 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                         : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 border border-white/5'
                     }`}
                   >
-                    {cat} {cat === 'All' ? `(${ARCADE_GAMES.length})` : ''}
+                    {cat === 'All' ? `All Games (${ARCADE_GAMES.length})` : cat}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* GAMES CARDS GRID (Dense 3-column in mobile landscape so ALL 6 games fit on phone screen!) */}
-            <div className={`grid gap-2.5 sm:gap-5 pb-8 ${
-              isMobileLandscape 
-                ? 'grid-cols-2 sm:grid-cols-3' 
-                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-            }`}>
+            {/* GAMES CARDS GRID (3-column on landscape so ALL 6 games are visible!) */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4 pb-12 mobile-landscape-grid">
               {filteredGames.map(game => (
                 <div
                   key={game.id}
-                  className={`group relative rounded-2xl border border-white/10 bg-zinc-900/90 hover:border-amber-400/60 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 overflow-hidden ${
-                    isMobileLandscape ? 'p-2.5 sm:p-3' : 'p-4 sm:p-5 sm:rounded-3xl hover:-translate-y-1'
-                  }`}
+                  className="group relative rounded-2xl border border-white/10 bg-zinc-900/90 hover:border-amber-400/60 p-2.5 sm:p-4 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 overflow-hidden mobile-landscape-card"
                 >
                   <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${game.bannerGradient} rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity pointer-events-none`} />
 
-                  <div className={`relative z-10 ${isMobileLandscape ? 'space-y-1' : 'space-y-2 sm:space-y-3'}`}>
+                  <div className="relative z-10 space-y-1.5 sm:space-y-2">
+                    {/* Header: Icon + Badge */}
                     <div className="flex items-start justify-between gap-1">
-                      <div className="flex items-center space-x-2">
-                        <div className={`rounded-xl bg-zinc-950/80 border border-white/10 flex items-center justify-center shadow-inner shrink-0 ${
-                          isMobileLandscape ? 'w-8 h-8 text-lg' : 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl'
-                        }`}>
-                          {game.iconEmoji}
-                        </div>
-                        {isMobileLandscape && (
-                          <div className="truncate">
-                            <h4 className="font-display font-black text-xs sm:text-sm text-white group-hover:text-amber-400 transition-colors truncate">
-                              {game.title}
-                            </h4>
-                            <span className="text-[9px] text-zinc-400 block truncate">
-                              {game.category} • {game.players}
-                            </span>
-                          </div>
-                        )}
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-zinc-950/80 border border-white/10 flex items-center justify-center text-lg sm:text-xl shadow-inner shrink-0">
+                        {game.iconEmoji}
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[8.5px] sm:text-[10px] font-black uppercase tracking-wider ${game.badgeColor} shadow-md shrink-0`}>
-                        {game.badge === 'PLAYABLE NOW' ? 'READY' : game.badge}
+                      <span className="px-2 py-0.5 rounded-full text-[8.5px] sm:text-[9.5px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-md shrink-0">
+                        PLAYABLE NOW
                       </span>
                     </div>
 
-                    {!isMobileLandscape && (
-                      <>
-                        <div>
-                          <h4 className="font-display font-black text-base sm:text-lg text-white group-hover:text-amber-400 transition-colors">
-                            {game.title}
-                          </h4>
-                          <p className="text-[11px] sm:text-xs text-zinc-400 font-sans line-clamp-1 mt-0.5">
-                            {game.tagline}
-                          </p>
-                        </div>
+                    {/* Title & Tagline */}
+                    <div>
+                      <h4 className="font-display font-black text-xs sm:text-base text-white group-hover:text-amber-400 transition-colors truncate">
+                        {game.title}
+                      </h4>
+                      <p className="text-[10px] sm:text-[11px] text-zinc-400 font-sans line-clamp-1">
+                        {game.tagline}
+                      </p>
+                    </div>
 
-                        <div className="flex items-center space-x-2 text-[10px] sm:text-[11px] text-zinc-400 font-bold">
-                          <span className="px-2 py-0.5 rounded-md bg-black/60 border border-white/5">{game.category}</span>
-                          <span>•</span>
-                          <span>{game.players}</span>
-                        </div>
+                    {/* Category & Player Tags */}
+                    <div className="flex items-center space-x-1.5 text-[9.5px] sm:text-[10.5px] text-zinc-400 font-bold">
+                      <span className="px-1.5 py-0.5 rounded bg-black/60 border border-white/5">{game.category}</span>
+                      <span>•</span>
+                      <span className="truncate">{game.players}</span>
+                    </div>
 
-                        <p className="text-zinc-300 text-xs sm:text-[13px] font-sans line-clamp-3 leading-relaxed">
-                          {game.description}
-                        </p>
-                      </>
-                    )}
+                    {/* Description */}
+                    <p className="text-zinc-300 text-[10.5px] sm:text-xs font-sans line-clamp-2 leading-relaxed">
+                      {game.description}
+                    </p>
                   </div>
 
-                  <div className={`relative z-10 ${isMobileLandscape ? 'pt-2 mt-1' : 'pt-3 sm:pt-4 mt-2'} border-t border-white/10`}>
+                  {/* Launch Game Button */}
+                  <div className="relative z-10 pt-2 mt-2 border-t border-white/10">
                     <button
                       onClick={() => handleLaunchGame(game.id)}
-                      className={`w-full rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black tracking-wider uppercase shadow-lg shadow-amber-400/20 flex items-center justify-center space-x-1.5 transition-all active:scale-95 ${
-                        isMobileLandscape ? 'py-1.5 text-[11px]' : 'py-2.5 sm:py-3 text-xs sm:text-sm'
-                      }`}
+                      className="w-full py-1.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-[11px] sm:text-xs tracking-wider uppercase shadow-lg shadow-amber-400/20 flex items-center justify-center space-x-1.5 transition-all active:scale-95"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>{isMobileLandscape ? 'PLAY' : game.actionLabel}</span>
+                      <span>{game.actionLabel}</span>
                     </button>
                   </div>
                 </div>
@@ -485,15 +473,15 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
               {/* ADD YOUR OWN GAME PROMPT CARD */}
               <div
                 onClick={() => setShowAddGameModal(true)}
-                className="rounded-2xl sm:rounded-3xl border-2 border-dashed border-white/15 hover:border-amber-400/60 p-5 flex flex-col items-center justify-center text-center space-y-2 cursor-pointer bg-zinc-950/40 hover:bg-zinc-900/50 transition-all group min-h-[220px]"
+                className="col-span-2 md:col-span-3 rounded-2xl border-2 border-dashed border-white/15 hover:border-amber-400/60 p-3.5 sm:p-5 flex flex-col items-center justify-center text-center space-y-1.5 cursor-pointer bg-zinc-950/40 hover:bg-zinc-900/50 transition-all group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shadow-lg">
-                  <Plus className="w-6 h-6" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shadow-lg">
+                  <Plus className="w-5 h-5" />
                 </div>
-                <h4 className="font-display font-bold text-sm text-white group-hover:text-amber-400">
+                <h4 className="font-display font-bold text-xs sm:text-sm text-white group-hover:text-amber-400">
                   + ADD YOUR GAME
                 </h4>
-                <p className="text-xs text-zinc-400 max-w-[200px]">
+                <p className="text-[10.5px] sm:text-xs text-zinc-400 max-w-sm">
                   Easily plug in your custom React, Canvas, or Three.js games into this menu!
                 </p>
               </div>

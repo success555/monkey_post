@@ -15,9 +15,11 @@ html, body {
   padding: 0;
   width: 100%;
   min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto !important;
   background-color: #09090b;
   color: #f3f4f6;
-  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 /* Prevent gesture conflicts ONLY on 3D canvas and analog stick touch zones */
@@ -40,6 +42,28 @@ canvas,
 .overflow-x-scroll {
   touch-action: pan-x !important;
   -webkit-overflow-scrolling: touch !important;
+}
+
+/* Mobile Landscape (Horizontal View) Optimization */
+@media (max-height: 620px) and (orientation: landscape) {
+  .mobile-landscape-compact-header {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+  .mobile-landscape-compact-tabs {
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
+  }
+  .mobile-landscape-compact-card {
+    padding: 8px 10px !important;
+  }
+  .mobile-landscape-hide {
+    display: none !important;
+  }
+  .mobile-landscape-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
 }
 
 /* Custom scrollbars */

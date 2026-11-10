@@ -194,7 +194,7 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black select-none">
+    <div className={`relative w-full ${activeGameId ? 'h-screen overflow-hidden' : 'min-h-screen overflow-y-auto'} bg-black select-none`}>
       {/* Screen Orientation Gate: Demands device rotation to Landscape before playing */}
       <RotateOverlay />
 
