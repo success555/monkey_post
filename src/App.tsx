@@ -13,6 +13,7 @@ import { AyoGame } from './games/ayo/AyoGame';
 import { WhotGame } from './games/whot/WhotGame';
 import { TenTenGame } from './games/tenten/TenTenGame';
 import { LudoGame } from './games/ludo/LudoGame';
+import { SnookerGame } from './games/snooker/SnookerGame';
 import {
   GameMode,
   MatchScore,
@@ -228,6 +229,11 @@ export const App: React.FC = () => {
       {/* --- NAIJA LUDO 3D GAME EXPERIENCE --- */}
       {activeGameId === 'naija_ludo_3d' && (
         <LudoGame onExit={handleReturnToHub} />
+      )}
+
+      {/* --- NAIJA SNOOKER 3D GAME EXPERIENCE --- */}
+      {activeGameId === 'snooker_3d' && (
+        <SnookerGame onExit={handleReturnToHub} />
       )}
 
       {/* --- MONKEY POST 3D GAME EXPERIENCE --- */}

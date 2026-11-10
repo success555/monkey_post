@@ -134,26 +134,28 @@ export const ARCADE_GAMES: ArcadeGame[] = [
     actionLabel: 'PLAY LUDO NOW'
   },
   {
-    id: 'kankere_table_tennis',
-    title: 'Kankere Street Ping Pong',
-    tagline: 'Bare-Knuckle Concrete Block Table Tennis',
+    id: 'snooker_3d',
+    title: 'Naija Snooker 3D',
+    tagline: 'Championship Billiards & Authentic English Snooker Rules',
     category: 'Sports',
-    status: 'coming_soon',
-    players: '1 - 2 Players',
+    status: 'playable',
+    players: '1 - 2 Players (Local & AI)',
     difficulty: 'Competitive',
-    badge: 'PLANNED',
-    badgeColor: 'bg-teal-500 text-black shadow-teal-500/50',
-    iconEmoji: '🏓',
-    bannerGradient: 'from-emerald-500/30 via-teal-700/30 to-black',
+    badge: 'PLAYABLE NOW',
+    badgeColor: 'bg-emerald-500 text-black shadow-emerald-500/50',
+    iconEmoji: '🎱',
+    bannerGradient: 'from-emerald-700/30 via-amber-700/30 to-black',
     accentColor: '#10b981',
-    description: 'Concrete block tables, wooden planks for nets, cracked celluloid balls, and wicked spin shots under the neighborhood floodlights.',
+    description: 'Championship 12ft snooker table featuring glossy physical resin balls, cushion bank rebounds, red-color break rotation, foul penalty tracking, and tactical AI opponent Alhaji Snooker.',
     features: [
-      'Rigid Concrete Bounce Physics & Street Paddles',
-      'High-Speed Topspin, Backspin & Slices',
-      'Deuce Thrillers to 11 Points'
+      'Official 22-Ball Snooker Rack (1 Cue, 15 Reds, 6 Colors on Spots)',
+      'Accurate Physics: Cushion Bounces, Elastic Clacks & Pocket Gravity',
+      'Official Rules: Red-Color Sequences, Break Tracker & Foul Penalties',
+      'Dual Perspectives: Dynamic Behind-Cue Aim Cam & Overhead Tactical Cam',
+      'Single Player vs Alhaji Snooker AI (3 Difficulties) & 2-Player Pass-and-Play'
     ],
-    controlsSummary: 'Drag paddle to position, flick forward to strike',
-    actionLabel: 'EXPLORE PREVIEW'
+    controlsSummary: 'Drag on table to aim, adjust Power slider, tap STRIKE',
+    actionLabel: 'PLAY SNOOKER NOW'
   }
 ];
 
