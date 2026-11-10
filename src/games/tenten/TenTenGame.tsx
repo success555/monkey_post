@@ -597,3 +597,4 @@ export const TenTenGame: React.FC<TenTenGameProps> = ({ onExit }) => {
 };
 
 export default TenTenGame;
+

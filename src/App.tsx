@@ -12,6 +12,7 @@ import { ArcadeHub } from './ui/ArcadeHub';
 import { AyoGame } from './games/ayo/AyoGame';
 import { WhotGame } from './games/whot/WhotGame';
 import { TenTenGame } from './games/tenten/TenTenGame';
+import { LudoGame } from './games/ludo/LudoGame';
 import {
   GameMode,
   MatchScore,
@@ -222,6 +223,11 @@ export const App: React.FC = () => {
       {/* --- TEN-TEN RHYTHM DUEL EXPERIENCE --- */}
       {activeGameId === 'ten_ten' && (
         <TenTenGame onExit={handleReturnToHub} />
+      )}
+
+      {/* --- NAIJA LUDO 3D GAME EXPERIENCE --- */}
+      {activeGameId === 'naija_ludo_3d' && (
+        <LudoGame onExit={handleReturnToHub} />
       )}
 
       {/* --- MONKEY POST 3D GAME EXPERIENCE --- */}

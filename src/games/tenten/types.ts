@@ -22,3 +22,4 @@ export interface TenTenState {
   commentary: string;
   winner: 'p1' | 'p2' | null;
 }
+

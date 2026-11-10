@@ -110,6 +110,30 @@ export const ARCADE_GAMES: ArcadeGame[] = [
     actionLabel: 'PLAY TEN-TEN NOW'
   },
   {
+    id: 'naija_ludo_3d',
+    title: 'Naija Ludo 3D',
+    tagline: 'The Ultimate African Street Board Game Duel',
+    category: 'Strategy',
+    status: 'playable',
+    players: '1 - 2 Players (Local & AI)',
+    difficulty: 'Competitive',
+    badge: 'PLAYABLE NOW',
+    badgeColor: 'bg-emerald-500 text-black shadow-emerald-500/50',
+    iconEmoji: '🎲',
+    bannerGradient: 'from-amber-600/30 via-red-700/30 to-black',
+    accentColor: '#f59e0b',
+    description: 'The beloved West African board game with physical 3D wooden pawns, rolling dice physics, authentic Six-to-open rules, Kpafuka chop captures, and tactical AI opponent Bros Emeka.',
+    features: [
+      '3D Hardwood Board with 4 Acrylic Quadrants & Safe Stars',
+      'Physics-Driven Tumbling 3D Dice with Smooth Token Hops',
+      'Two-Player Local Pass-and-Play & Smart AI Opponent Bros Emeka',
+      'Authentic Rules: Roll 6 to Open, Kpafuka Chop Captures & House Runs',
+      'Procedural Sound Effects: Dice Shakes, Clatters, Hops & Kpafuka Hits'
+    ],
+    controlsSummary: 'Tap Roll Dice (or Spacebar), tap glowing pawn to move',
+    actionLabel: 'PLAY LUDO NOW'
+  },
+  {
     id: 'kankere_table_tennis',
     title: 'Kankere Street Ping Pong',
     tagline: 'Bare-Knuckle Concrete Block Table Tennis',
