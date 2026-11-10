@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
-import Script from 'next/script';
 import '../index.css';
 
 export const metadata: Metadata = {
@@ -8,16 +7,6 @@ export const metadata: Metadata = {
   description: 'Play 3D Monkey Post, Ayò Olọ́pọ́n, Naija Whot, Ten-Ten Rhythm Duel, Naija Ludo 3D, and Championship Snooker 3D on Lagos street asphalt.',
   icons: {
     icon: '/favicon.ico',
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'Naija Arcade',
-  },
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'screen-orientation': 'landscape',
-    'x5-orientation': 'landscape',
   },
 };
 
@@ -40,30 +29,47 @@ export default function RootLayout({
   return (
     <ClerkProvider publishableKey={clerkKey}>
       <html lang="en">
-        <body className="bg-zinc-950 text-white font-sans antialiased overflow-x-hidden w-full min-h-screen">
-          <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
-          <Script id="tailwind-config" strategy="beforeInteractive">
-            {`
-              tailwind.config = {
-                theme: {
-                  extend: {
-                    fontFamily: {
-                      sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-                      display: ['Bungee', 'cursive', 'sans-serif']
-                    },
-                    colors: {
-                      naija: {
-                        green: '#008751',
-                        gold: '#fbbf24',
-                        sand: '#b36b41',
-                        brick: '#78350f'
+        <head>
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <meta name="mobile-web-app-capable" content="yes" />
+          <meta name="screen-orientation" content="landscape" />
+          <meta name="x5-orientation" content="landscape" />
+          {/* Google Fonts */}
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Bungee&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap"
+            rel="stylesheet"
+          />
+          {/* Tailwind CSS CDN & Naija Custom Theme */}
+          <script src="https://cdn.tailwindcss.com"></script>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                tailwind.config = {
+                  theme: {
+                    extend: {
+                      fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                        display: ['Bungee', 'cursive', 'sans-serif']
+                      },
+                      colors: {
+                        naija: {
+                          green: '#008751',
+                          gold: '#fbbf24',
+                          sand: '#b36b41',
+                          brick: '#78350f'
+                        }
                       }
                     }
                   }
-                }
-              };
-            `}
-          </Script>
+                };
+              `,
+            }}
+          />
+        </head>
+        <body className="bg-zinc-950 text-white font-sans antialiased overflow-x-hidden w-full min-h-screen">
           {children}
         </body>
       </html>
