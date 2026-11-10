@@ -40,7 +40,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(authStore.getCurrentUser());
 
-  // Mobile horizontal (landscape) view detection (< 620px height)
+  // Mobile horizontal (landscape) view detection (< 650px height)
   const [isMobileLandscape, setIsMobileLandscape] = useState<boolean>(false);
   const [showHeroInLandscape, setShowHeroInLandscape] = useState<boolean>(false);
 
@@ -48,15 +48,30 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
     const handleCheckLandscape = () => {
       if (typeof window === 'undefined') return;
       const isLandscape = window.innerWidth > window.innerHeight;
-      const isShortHeight = window.innerHeight <= 620;
-      setIsMobileLandscape(isLandscape && isShortHeight);
+      const isShortHeight = window.innerHeight <= 650;
+      const isAspectWide = (window.innerWidth / Math.max(window.innerHeight, 1)) >= 1.25;
+      const matchesMedia = typeof window.matchMedia === 'function' && (
+        window.matchMedia('(orientation: landscape) and (max-height: 650px)').matches ||
+        window.matchMedia('(max-height: 580px)').matches
+      );
+      setIsMobileLandscape(Boolean(matchesMedia || ((isLandscape || isAspectWide) && isShortHeight)));
     };
     handleCheckLandscape();
     window.addEventListener('resize', handleCheckLandscape);
-    window.addEventListener('orientationchange', handleCheckLandscape);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(handleCheckLandscape, 100);
+      setTimeout(handleCheckLandscape, 350);
+    });
+
+    const mql = typeof window.matchMedia === 'function' ? window.matchMedia('(orientation: landscape) and (max-height: 650px)') : null;
+    const mqlHandler = (e: MediaQueryListEvent) => {
+      setIsMobileLandscape(e.matches || (window.innerWidth > window.innerHeight && window.innerHeight <= 650));
+    };
+    if (mql?.addEventListener) mql.addEventListener('change', mqlHandler);
+
     return () => {
       window.removeEventListener('resize', handleCheckLandscape);
-      window.removeEventListener('orientationchange', handleCheckLandscape);
+      if (mql?.removeEventListener) mql.removeEventListener('change', mqlHandler);
     };
   }, []);
 
@@ -145,7 +160,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
       <header className="relative z-10 w-full px-3 sm:px-6 py-2 sm:py-3 border-b border-white/10 bg-black/80 backdrop-blur-md flex items-center justify-between shrink-0 mobile-landscape-compact-header">
         {/* Left: Brand Logo & Title */}
         <div className="flex items-center space-x-2 sm:space-x-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-lg sm:text-xl shadow-lg shadow-amber-500/20 shrink-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-lg sm:text-xl shadow-lg shadow-amber-500/20 shrink-0 logo-badge">
             🦁
           </div>
           <div>
@@ -154,7 +169,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                 NAIJA STREET ARCADE
               </h1>
               <span className="text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-400 text-black uppercase tracking-wider">
-                HUB
+                DASHBOARD
               </span>
             </div>
             <p className="text-[9.5px] sm:text-xs text-zinc-400 font-sans hidden md:block">
@@ -186,7 +201,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
           ) : (
             <div className="flex items-center space-x-1">
               <a
-                href="/"
+                href="/sign-in"
                 className="px-2.5 py-1.5 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-[11px] font-bold transition-all active:scale-95 flex items-center space-x-1"
               >
                 <User className="w-3 h-3 text-amber-400" />
@@ -262,15 +277,15 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
       </div>
 
       {/* MAIN DASHBOARD CONTENT AREA */}
-      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-2.5 sm:py-5 flex flex-col space-y-3 sm:space-y-5">
+      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-2 sm:py-5 flex flex-col space-y-2 sm:space-y-4 mobile-landscape-main">
         {/* ======================================================== */}
         {/* TAB 1: ALL GAMES CATALOG */}
         {/* ======================================================== */}
         {activeHubTab === 'games' && (
           <>
-            {/* GAMER WELCOME HUD STRIP (Hidden on mobile horizontal view to save screen real estate) */}
+            {/* GAMER WELCOME HUD STRIP (Hidden on mobile horizontal view via CSS & JS to save screen real estate) */}
             {currentUser && (
-              <div className="hidden md:flex mobile-landscape-hide p-3 sm:p-4 rounded-2xl bg-zinc-900/80 border border-white/10 backdrop-blur-md flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+              <div className="hud-welcome-banner hidden md:flex mobile-landscape-hide p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-900/80 border border-white/10 backdrop-blur-md flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xl">
                 <div className="flex items-center space-x-3">
                   <div className="text-2xl">{currentUser.avatar}</div>
                   <div>
@@ -301,41 +316,48 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
             {/* SPOTLIGHT FEATURED BANNER */}
             {isMobileLandscape && !showHeroInLandscape ? (
               /* COMPACT QUICK-PLAY BAR FOR MOBILE LANDSCAPE (Leaves room for all 6 games on screen!) */
-              <div className="rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-zinc-900 to-black p-2 sm:p-2.5 shadow-lg flex items-center justify-between gap-2 shrink-0">
+              <div className="mobile-landscape-hero-compact rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-zinc-900 to-black p-1.5 sm:p-2.5 shadow-md flex items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center space-x-2 truncate">
-                  <div className="w-8 h-8 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center text-lg shrink-0">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center text-sm sm:text-base shrink-0">
                     ⚽
                   </div>
                   <div className="truncate">
                     <div className="flex items-center space-x-1.5">
                       <span className="font-display font-black text-xs text-amber-400 truncate">FEATURED: MONKEY POST 3D</span>
-                      <span className="text-[8.5px] px-1.5 py-0.2 rounded bg-emerald-500 text-black font-black uppercase">LIVE NOW</span>
+                      <span className="text-[8px] px-1.5 py-0.2 rounded bg-emerald-500 text-black font-black uppercase">LIVE NOW</span>
                     </div>
-                    <p className="text-[10px] text-zinc-400 truncate font-sans">
+                    <p className="text-[9.5px] text-zinc-400 truncate font-sans">
                       3D African street football on Lagos asphalt • 1-2 Players
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-1.5 shrink-0">
+                <div className="flex items-center space-x-1 shrink-0">
                   <button
                     onClick={() => handleLaunchGame('monkey_post')}
-                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-[11px] uppercase tracking-wider shadow-md active:scale-95 flex items-center space-x-1"
+                    className="px-3 py-1 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-[10.5px] uppercase tracking-wider shadow-md active:scale-95 flex items-center space-x-1"
                   >
-                    <Play className="w-3 h-3 fill-current" />
+                    <Play className="w-2.5 h-2.5 fill-current" />
                     <span>PLAY NOW</span>
                   </button>
                   <button
-                    onClick={() => setShowHeroInLandscape(true)}
-                    className="px-2 py-1.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white text-[10px] font-bold"
-                    title="View Full Game Overview"
+                    onClick={() => setSelectedPreviewGame(featuredGame)}
+                    className="px-2 py-1 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white text-[9.5px] font-bold"
+                    title="View Game Details"
                   >
-                    Info ▼
+                    Info ℹ️
+                  </button>
+                  <button
+                    onClick={() => setShowHeroInLandscape(true)}
+                    className="px-1.5 py-1 rounded-lg bg-zinc-800/60 text-zinc-400 hover:text-white text-[9.5px] font-bold"
+                    title="Expand Overview"
+                  >
+                    ▼
                   </button>
                 </div>
               </div>
             ) : (
-              /* FULL SPOTLIGHT HERO BANNER (Matches Image 1 reference) */
-              <div className="relative rounded-2xl sm:rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-emerald-600/20 to-zinc-900/90 p-3.5 sm:p-6 shadow-2xl overflow-hidden group">
+              /* FULL SPOTLIGHT HERO BANNER (Matches Image 1 reference, hidden on short mobile landscape) */
+              <div className="mobile-landscape-hero-full relative rounded-2xl sm:rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-emerald-600/20 to-zinc-900/90 p-3 sm:p-5 shadow-2xl overflow-hidden group">
                 {isMobileLandscape && (
                   <button
                     onClick={() => setShowHeroInLandscape(false)}
@@ -347,18 +369,18 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                 <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 sm:w-48 h-32 sm:h-48 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-6">
-                  <div className="flex-1 space-y-1.5 sm:space-y-2">
+                  <div className="flex-1 space-y-1 sm:space-y-1.5">
                     <div className="flex items-center space-x-2">
-                      <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-lg shadow-emerald-500/30 flex items-center space-x-1">
+                      <span className="px-2 py-0.5 rounded-full text-[8.5px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-lg shadow-emerald-500/30 flex items-center space-x-1">
                         <Sparkles className="w-2.5 h-2.5" />
                         <span>FEATURED • PLAYABLE NOW</span>
                       </span>
-                      <span className="text-[10px] sm:text-xs text-zinc-400 font-bold">
+                      <span className="text-[9.5px] sm:text-xs text-zinc-400 font-bold">
                         ⚽ 3D African Street Football
                       </span>
                     </div>
 
-                    <h2 className="font-display font-black text-lg sm:text-2xl md:text-3xl text-white tracking-wide">
+                    <h2 className="font-display font-black text-base sm:text-2xl md:text-3xl text-white tracking-wide">
                       MONKEY POST 3D
                     </h2>
 
@@ -366,14 +388,14 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                       Take the pitch on Lagos asphalt! Battle between Ojuelegba, Mitchells Plain, Enerhen & Hausa Quarters with authentic 3D footballers, painted Africa map center circle, Mama T Provisions storefront, and live Warri commentary.
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
-                      <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-zinc-300">
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 pt-0.5">
+                      <span className="text-[9px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-zinc-300">
                         👥 1-2 Players (Local & Online)
                       </span>
-                      <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-amber-300">
+                      <span className="text-[9px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-amber-300">
                         🏆 4 Game Modes
                       </span>
-                      <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-emerald-300">
+                      <span className="text-[9px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-emerald-300">
                         📱 Mobile Landscape Ready
                       </span>
                     </div>
@@ -382,9 +404,9 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                   <div className="shrink-0 flex sm:flex-col justify-end">
                     <button
                       onClick={() => handleLaunchGame('monkey_post')}
-                      className="w-full sm:w-auto px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all active:scale-95 group-hover:scale-105"
+                      className="w-full sm:w-auto px-5 sm:px-8 py-2 sm:py-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all active:scale-95 group-hover:scale-105"
                     >
-                      <Play className="w-4 h-4 fill-current" />
+                      <Play className="w-3.5 h-3.5 fill-current" />
                       <span>PLAY MONKEY POST NOW</span>
                     </button>
                   </div>
@@ -393,18 +415,18 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
             )}
 
             {/* CATEGORY FILTER TABS & CATALOG HEADER */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2.5 pt-1">
+            <div className="mobile-landscape-catalog-header flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 pt-0.5">
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="font-display font-black text-sm sm:text-lg text-white tracking-wide">
-                    ALL GAMES CATALOG
+                  <h3 className="font-display font-black text-xs sm:text-base md:text-lg text-white tracking-wide">
+                    ALL GAMES CATALOG ({filteredGames.length})
                   </h3>
-                  <span className="text-[9.5px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
-                    {filteredGames.length} GAMES PLAYABLE
+                  <span className="text-[9px] font-mono px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-bold hidden sm:inline-block">
+                    ALL 6 PLAYABLE NOW
                   </span>
                 </div>
                 <p className="text-[10px] sm:text-xs text-zinc-400 font-sans hidden sm:block">
-                  Select Monkey Post to start playing or explore upcoming games
+                  Select any game below to start playing on street pitch
                 </p>
               </div>
 
@@ -414,68 +436,80 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-2.5 sm:px-3 py-1 rounded-xl text-[10.5px] sm:text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${
+                    className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-xl text-[10px] sm:text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${
                       activeCategory === cat
                         ? 'bg-amber-400 text-black font-black shadow-md shadow-amber-400/20'
                         : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 border border-white/5'
                     }`}
                   >
-                    {cat === 'All' ? `All Games (${ARCADE_GAMES.length})` : cat}
+                    {cat === 'All' ? `All (${ARCADE_GAMES.length})` : cat}
                   </button>
                 ))}
               </div>
             </div>
 
             {/* GAMES CARDS GRID (3-column on landscape so ALL 6 games are visible!) */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4 pb-12 mobile-landscape-grid">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3.5 pb-8 mobile-landscape-grid">
               {filteredGames.map(game => (
                 <div
                   key={game.id}
-                  className="group relative rounded-2xl border border-white/10 bg-zinc-900/90 hover:border-amber-400/60 p-2.5 sm:p-4 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 overflow-hidden mobile-landscape-card"
+                  className="group relative rounded-xl sm:rounded-2xl border border-white/10 bg-zinc-900/90 hover:border-amber-400/60 p-2 sm:p-3.5 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 overflow-hidden mobile-landscape-card"
                 >
-                  <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${game.bannerGradient} rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity pointer-events-none`} />
+                  <div className={`absolute top-0 right-0 w-28 h-28 bg-gradient-to-br ${game.bannerGradient} rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none`} />
 
-                  <div className="relative z-10 space-y-1.5 sm:space-y-2">
-                    {/* Header: Icon + Badge */}
+                  <div className="relative z-10 space-y-1 sm:space-y-1.5">
+                    {/* Header: Icon + Badge + Details Button */}
                     <div className="flex items-start justify-between gap-1">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-zinc-950/80 border border-white/10 flex items-center justify-center text-lg sm:text-xl shadow-inner shrink-0">
+                      <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-zinc-950/80 border border-white/10 flex items-center justify-center text-sm sm:text-xl shadow-inner shrink-0 game-icon-box">
                         {game.iconEmoji}
                       </div>
-                      <span className="px-2 py-0.5 rounded-full text-[8.5px] sm:text-[9.5px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-md shrink-0">
-                        PLAYABLE NOW
-                      </span>
+                      <div className="flex items-center space-x-1 shrink-0">
+                        <span className="px-1.5 py-0.2 rounded-full text-[8px] sm:text-[9.5px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-md shrink-0">
+                          PLAYABLE
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPreviewGame(game);
+                          }}
+                          className="p-1 rounded-md bg-zinc-800/90 hover:bg-zinc-700 text-zinc-400 hover:text-amber-400 transition-colors"
+                          title="View Rules & Info"
+                        >
+                          <Info className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Title & Tagline */}
                     <div>
-                      <h4 className="font-display font-black text-xs sm:text-base text-white group-hover:text-amber-400 transition-colors truncate">
+                      <h4 className="font-display font-black text-xs sm:text-base text-white group-hover:text-amber-400 transition-colors truncate game-title">
                         {game.title}
                       </h4>
-                      <p className="text-[10px] sm:text-[11px] text-zinc-400 font-sans line-clamp-1">
+                      <p className="text-[9px] sm:text-[11px] text-zinc-400 font-sans line-clamp-1 game-tagline">
                         {game.tagline}
                       </p>
                     </div>
 
                     {/* Category & Player Tags */}
-                    <div className="flex items-center space-x-1.5 text-[9.5px] sm:text-[10.5px] text-zinc-400 font-bold">
-                      <span className="px-1.5 py-0.5 rounded bg-black/60 border border-white/5">{game.category}</span>
+                    <div className="flex items-center space-x-1.5 text-[8.5px] sm:text-[10.5px] text-zinc-400 font-bold game-tags">
+                      <span className="px-1.5 py-0.2 rounded bg-black/60 border border-white/5">{game.category}</span>
                       <span>•</span>
                       <span className="truncate">{game.players}</span>
                     </div>
 
-                    {/* Description */}
-                    <p className="text-zinc-300 text-[10.5px] sm:text-xs font-sans line-clamp-2 leading-relaxed">
+                    {/* Description (hidden on mobile landscape so all 6 fit in 2 rows) */}
+                    <p className="text-zinc-300 text-[10px] sm:text-xs font-sans line-clamp-2 leading-relaxed game-desc hidden sm:block">
                       {game.description}
                     </p>
                   </div>
 
                   {/* Launch Game Button */}
-                  <div className="relative z-10 pt-2 mt-2 border-t border-white/10">
+                  <div className="relative z-10 pt-1.5 sm:pt-2 mt-1 sm:mt-2 border-t border-white/10">
                     <button
                       onClick={() => handleLaunchGame(game.id)}
-                      className="w-full py-1.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-[11px] sm:text-xs tracking-wider uppercase shadow-lg shadow-amber-400/20 flex items-center justify-center space-x-1.5 transition-all active:scale-95"
+                      className="w-full py-1 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-[10px] sm:text-xs tracking-wider uppercase shadow-lg shadow-amber-400/20 flex items-center justify-center space-x-1.5 transition-all active:scale-95 game-play-btn"
                     >
-                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <Play className="w-3 h-3 fill-current" />
                       <span>{game.actionLabel}</span>
                     </button>
                   </div>
@@ -485,16 +519,16 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
               {/* ADD YOUR OWN GAME PROMPT CARD */}
               <div
                 onClick={() => setShowAddGameModal(true)}
-                className="col-span-2 md:col-span-3 rounded-2xl border-2 border-dashed border-white/15 hover:border-amber-400/60 p-3.5 sm:p-5 flex flex-col items-center justify-center text-center space-y-1.5 cursor-pointer bg-zinc-950/40 hover:bg-zinc-900/50 transition-all group"
+                className="col-span-2 md:col-span-3 rounded-xl sm:rounded-2xl border-2 border-dashed border-white/15 hover:border-amber-400/60 p-2.5 sm:p-4 flex flex-col items-center justify-center text-center space-y-1 cursor-pointer bg-zinc-950/40 hover:bg-zinc-900/50 transition-all group"
               >
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shadow-lg">
-                  <Plus className="w-5 h-5" />
+                <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shadow-lg">
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <h4 className="font-display font-bold text-xs sm:text-sm text-white group-hover:text-amber-400">
                   + ADD YOUR GAME
                 </h4>
-                <p className="text-[10.5px] sm:text-xs text-zinc-400 max-w-sm">
-                  Easily plug in your custom React, Canvas, or Three.js games into this menu!
+                <p className="text-[9.5px] sm:text-xs text-zinc-400 max-w-sm">
+                  Plug your custom React, Canvas, or Three.js games into this menu!
                 </p>
               </div>
             </div>
@@ -682,6 +716,84 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
             setCurrentUser(null);
           }}
         />
+      )}
+
+      {/* GAME PREVIEW & CONTROLS POPUP MODAL */}
+      {selectedPreviewGame && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg bg-zinc-900 border border-amber-400/40 rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 space-y-3.5 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-10 h-10 rounded-xl bg-zinc-950 border border-white/10 flex items-center justify-center text-2xl shadow-inner shrink-0">
+                  {selectedPreviewGame.iconEmoji}
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-base sm:text-lg text-white">
+                    {selectedPreviewGame.title}
+                  </h3>
+                  <p className="text-xs text-amber-400 font-bold">
+                    {selectedPreviewGame.category} • {selectedPreviewGame.players}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedPreviewGame(null)}
+                className="p-1 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans">
+              {selectedPreviewGame.description}
+            </p>
+
+            {/* Features list */}
+            {selectedPreviewGame.features && selectedPreviewGame.features.length > 0 && (
+              <div className="space-y-1 bg-black/40 p-3 rounded-xl border border-white/5">
+                <div className="text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider mb-1">
+                  Key Game Highlights:
+                </div>
+                <ul className="text-xs text-zinc-300 space-y-1 list-disc list-inside">
+                  {selectedPreviewGame.features.map((f, i) => (
+                    <li key={i} className="text-[11px] leading-tight text-zinc-300">{f}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Controls summary */}
+            {selectedPreviewGame.controlsSummary && (
+              <div className="bg-amber-950/30 border border-amber-500/20 p-2.5 rounded-xl text-xs text-amber-200">
+                <span className="font-bold">🎮 Controls: </span>
+                <span>{selectedPreviewGame.controlsSummary}</span>
+              </div>
+            )}
+
+            {/* Launch Button */}
+            <div className="pt-2 flex space-x-2">
+              <button
+                onClick={() => {
+                  const id = selectedPreviewGame.id;
+                  setSelectedPreviewGame(null);
+                  handleLaunchGame(id);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-black font-display font-black text-xs sm:text-sm uppercase tracking-wider shadow-xl shadow-amber-400/20 flex items-center justify-center space-x-2 transition-all active:scale-95"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>LAUNCH {selectedPreviewGame.title.toUpperCase()}</span>
+              </button>
+              <button
+                onClick={() => setSelectedPreviewGame(null)}
+                className="px-4 py-2.5 rounded-xl bg-zinc-800 text-white font-bold text-xs uppercase hover:bg-zinc-700"
+              >
+                CLOSE
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* HOW TO ADD A NEW GAME MODAL */}

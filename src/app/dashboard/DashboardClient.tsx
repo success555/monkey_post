@@ -26,3 +26,4 @@ const MainArcadeApp = dynamicModule(
 export default function DashboardClient() {
   return <MainArcadeApp />;
 }
+

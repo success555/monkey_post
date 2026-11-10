@@ -44,25 +44,107 @@ canvas,
   -webkit-overflow-scrolling: touch !important;
 }
 
-/* Mobile Landscape (Horizontal View) Optimization */
-@media (max-height: 620px) and (orientation: landscape) {
+/* ============================================================
+   MOBILE LANDSCAPE / HORIZONTAL SCREEN OPTIMIZATIONS
+   Applies to phones in landscape (height <= 580px, or landscape with height <= 650px)
+   Guarantees ALL 6 GAMES are immediately visible on screen!
+   ============================================================ */
+@media screen and (max-height: 580px), screen and (orientation: landscape) and (max-height: 650px), screen and (max-width: 950px) and (max-height: 580px) {
+  /* 1. Ultra-compact Header */
   .mobile-landscape-compact-header {
     padding-top: 4px !important;
     padding-bottom: 4px !important;
+    min-height: 36px !important;
   }
+  .mobile-landscape-compact-header .logo-badge {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 14px !important;
+  }
+  .mobile-landscape-compact-header h1 {
+    font-size: 11px !important;
+  }
+
+  /* 2. Ultra-compact Tabs Bar */
   .mobile-landscape-compact-tabs {
-    padding-top: 3px !important;
-    padding-bottom: 3px !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    min-height: 28px !important;
   }
-  .mobile-landscape-compact-card {
-    padding: 8px 10px !important;
+  .mobile-landscape-compact-tabs button {
+    padding: 3px 8px !important;
+    font-size: 10px !important;
   }
+
+  /* 3. Hide the bulky 60px welcome banner on mobile landscape to give all screen space to the games */
+  .hud-welcome-banner,
   .mobile-landscape-hide {
     display: none !important;
   }
+
+  /* 4. Hide the giant 250px featured hero block on mobile landscape so it doesn't push down the 6 games */
+  .mobile-landscape-hero-full {
+    display: none !important;
+  }
+
+  /* 5. Compact Quick-Play bar for Monkey Post on mobile landscape */
+  .mobile-landscape-hero-compact {
+    display: flex !important;
+    padding: 4px 8px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* 6. Main Content Area Padding */
+  main.mobile-landscape-main {
+    padding-top: 4px !important;
+    padding-bottom: 12px !important;
+    row-gap: 4px !important;
+  }
+
+  /* 7. Catalog Header & Filters */
+  .mobile-landscape-catalog-header {
+    padding-top: 0 !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* 8. 3-COLUMN x 2-ROW GRID FOR ALL 6 GAMES */
   .mobile-landscape-grid {
+    display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 8px !important;
+    gap: 6px !important;
+    padding-bottom: 12px !important;
+  }
+
+  /* 9. Compact Game Card on Mobile Landscape */
+  .mobile-landscape-card {
+    padding: 6px 8px !important;
+    min-height: auto !important;
+    border-radius: 12px !important;
+  }
+  .mobile-landscape-card .game-icon-box {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 13px !important;
+  }
+  .mobile-landscape-card .game-title {
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+  }
+  .mobile-landscape-card .game-tagline {
+    font-size: 8.5px !important;
+    line-height: 1.1 !important;
+  }
+  .mobile-landscape-card .game-tags {
+    font-size: 8px !important;
+    margin-top: 1px !important;
+  }
+  .mobile-landscape-card .game-desc {
+    display: none !important; /* Hide long 3-line paragraph on landscape so all 6 cards fit in 2 rows */
+  }
+  .mobile-landscape-card .game-play-btn {
+    padding: 3px 6px !important;
+    font-size: 9.5px !important;
+    border-radius: 8px !important;
   }
 }
 

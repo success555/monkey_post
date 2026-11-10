@@ -194,7 +194,13 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <div className={`relative w-full ${activeGameId ? 'h-screen overflow-hidden' : 'min-h-screen overflow-y-auto'} bg-black select-none`}>
+    <div 
+      className={`relative w-full ${activeGameId ? 'h-screen overflow-hidden select-none touch-none' : 'min-h-screen overflow-y-auto scrollable'} bg-black`}
+      style={{
+        WebkitOverflowScrolling: 'touch',
+        touchAction: activeGameId ? 'none' : 'pan-y'
+      }}
+    >
       {/* Screen Orientation Gate: Demands device rotation to Landscape before playing */}
       <RotateOverlay />
 
