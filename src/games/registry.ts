@@ -90,22 +90,24 @@ export const ARCADE_GAMES: ArcadeGame[] = [
     title: 'Ten-Ten Rhythm Duel',
     tagline: 'High-Speed Rhythm Clapping & Leg Sync Battle',
     category: 'Rhythm',
-    status: 'coming_soon',
-    players: '2 Players',
-    difficulty: 'Casual',
-    badge: 'IN DEVELOPMENT',
-    badgeColor: 'bg-cyan-500 text-black shadow-cyan-500/50',
+    status: 'playable',
+    players: '1 - 2 Players (Local & AI)',
+    difficulty: 'Competitive',
+    badge: 'PLAYABLE NOW',
+    badgeColor: 'bg-emerald-500 text-black shadow-emerald-500/50',
     iconEmoji: '👏',
     bannerGradient: 'from-cyan-500/30 via-blue-700/30 to-black',
     accentColor: '#06b6d4',
-    description: 'The infectious playground rhythm duel where two players clap on beat and mirror or avoid each other’s stepping feet to rack up combo streaks.',
+    description: 'The infectious African playground rhythm duel where two players clap on beat and mirror or avoid each other’s stepping feet to rack up combo streaks.',
     features: [
-      'Authentic Clapping Beats & Street Chants',
-      'Rapid Reflex Eye-Foot Coordination',
-      'Combo Multiplier Streaks & Fast Duels'
+      '4-Beat Afrobeat Handclap & Foot Stomp Rhythm Engine',
+      'Two-Player Local Pass-and-Play Duel on One Screen',
+      'Smart AI Opponent Aisha with Easy (96 BPM), Medium (120 BPM), and Hard (146 BPM) Tiers',
+      'Authentic Caller Scoring, Leg Clashes & Combo Multiplier Streaks',
+      'Zero Asset Dependencies with Procedural Web Audio Synthesis'
     ],
-    controlsSummary: 'Tap left or right foot in rhythm with the beat',
-    actionLabel: 'EXPLORE PREVIEW'
+    controlsSummary: 'Tap Left or Right foot on Beat 4 (Keys A/D for P1, Arrows for P2)',
+    actionLabel: 'PLAY TEN-TEN NOW'
   },
   {
     id: 'kankere_table_tennis',

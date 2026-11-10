@@ -618,3 +618,4 @@ const WhotCardView: React.FC<WhotCardViewProps> = ({
 };
 
 export default WhotGame;
+

@@ -41,3 +41,4 @@ export interface PlayCardResult {
   cardsDrawnCount?: number;
   isCheckUp: boolean;
 }
+

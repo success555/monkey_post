@@ -11,6 +11,7 @@ import { RotateOverlay } from './ui/RotateOverlay';
 import { ArcadeHub } from './ui/ArcadeHub';
 import { AyoGame } from './games/ayo/AyoGame';
 import { WhotGame } from './games/whot/WhotGame';
+import { TenTenGame } from './games/tenten/TenTenGame';
 import {
   GameMode,
   MatchScore,
@@ -216,6 +217,11 @@ export const App: React.FC = () => {
       {/* --- NAIJA WHOT! CARD GAME EXPERIENCE --- */}
       {activeGameId === 'naija_whot' && (
         <WhotGame onExit={handleReturnToHub} />
+      )}
+
+      {/* --- TEN-TEN RHYTHM DUEL EXPERIENCE --- */}
+      {activeGameId === 'ten_ten' && (
+        <TenTenGame onExit={handleReturnToHub} />
       )}
 
       {/* --- MONKEY POST 3D GAME EXPERIENCE --- */}
