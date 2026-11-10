@@ -35,7 +35,7 @@ export default function SignInPage() {
 
     if (res.success) {
       soundFX.playWhistle(true);
-      router.push('/');
+      router.push('/dashboard');
     } else {
       setErrorMessage(res.error || 'Login failed. Check your username or password.');
     }
@@ -46,7 +46,7 @@ export default function SignInPage() {
     const res = authStore.login(email, pass);
     if (res.success) {
       soundFX.playWhistle(true);
-      router.push('/');
+      router.push('/dashboard');
     } else {
       setErrorMessage(res.error || 'Demo login failed');
     }
@@ -57,7 +57,7 @@ export default function SignInPage() {
     const guestEmail = `${guestId}@streetarcade.ng`;
     authStore.register(guestId, guestEmail, `Street Guest ${guestId.slice(-4)}`, '🎮');
     soundFX.playWhistle(true);
-    router.push('/');
+    router.push('/dashboard');
   };
 
   return (
@@ -69,11 +69,11 @@ export default function SignInPage() {
       {/* TOP HEADER BAR */}
       <header className="relative z-10 w-full px-3 sm:px-8 py-2.5 sm:py-3.5 border-b border-white/10 bg-black/70 backdrop-blur-md flex items-center justify-between shrink-0">
         <Link
-          href="/"
+          href="/dashboard"
           className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-xs font-bold text-zinc-300 transition-all active:scale-95"
         >
           <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
-          <span>Back to Arcade</span>
+          <span>Enter Dashboard</span>
         </Link>
 
         <div className="flex items-center space-x-2">

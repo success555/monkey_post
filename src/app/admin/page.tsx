@@ -25,7 +25,7 @@ export default function AdminPage() {
   return (
     <AdminDashboard
       onBackToHub={() => {
-        router.push('/');
+        router.push('/dashboard');
       }}
     />
   );

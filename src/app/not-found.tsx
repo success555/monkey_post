@@ -15,7 +15,7 @@ export default function NotFound() {
         You seem to have strayed off the pitch! Return to the Lagos Street Arcade Hub to jump into the action.
       </p>
       <Link
-        href="/"
+        href="/dashboard"
         className="mt-6 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-400/20 transition-all active:scale-95"
       >
         RETURN TO ARCADE HUB
