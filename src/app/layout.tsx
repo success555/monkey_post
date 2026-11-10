@@ -30,21 +30,23 @@ export default function RootLayout({
     <ClerkProvider publishableKey={clerkKey}>
       <html lang="en">
         <head>
-          <meta name="apple-mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-          <meta name="mobile-web-app-capable" content="yes" />
-          <meta name="screen-orientation" content="landscape" />
-          <meta name="x5-orientation" content="landscape" />
+          <meta key="meta-apple-1" name="apple-mobile-web-app-capable" content="yes" />
+          <meta key="meta-apple-2" name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <meta key="meta-mobile" name="mobile-web-app-capable" content="yes" />
+          <meta key="meta-screen-ori" name="screen-orientation" content="landscape" />
+          <meta key="meta-x5-ori" name="x5-orientation" content="landscape" />
           {/* Google Fonts */}
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link key="font-pre-1" rel="preconnect" href="https://fonts.googleapis.com" />
+          <link key="font-pre-2" rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link
+            key="font-link"
             href="https://fonts.googleapis.com/css2?family=Bungee&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap"
             rel="stylesheet"
           />
           {/* Tailwind CSS CDN & Naija Custom Theme */}
-          <script src="https://cdn.tailwindcss.com"></script>
+          <script key="tw-cdn" src="https://cdn.tailwindcss.com"></script>
           <script
+            key="tw-cfg"
             dangerouslySetInnerHTML={{
               __html: `
                 tailwind.config = {
