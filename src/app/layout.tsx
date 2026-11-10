@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { ClerkProvider } from '@clerk/nextjs';
 import '../index.css';
 
@@ -7,6 +8,16 @@ export const metadata: Metadata = {
   description: 'Play 3D Monkey Post, Ayò Olọ́pọ́n, Naija Whot, Ten-Ten Rhythm Duel, Naija Ludo 3D, and Championship Snooker 3D on Lagos street asphalt.',
   icons: {
     icon: '/favicon.ico',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Naija Street Arcade',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'screen-orientation': 'landscape',
+    'x5-orientation': 'landscape',
   },
 };
 
@@ -29,49 +40,33 @@ export default function RootLayout({
   return (
     <ClerkProvider publishableKey={clerkKey}>
       <html lang="en">
-        <head>
-          <meta key="meta-apple-1" name="apple-mobile-web-app-capable" content="yes" />
-          <meta key="meta-apple-2" name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-          <meta key="meta-mobile" name="mobile-web-app-capable" content="yes" />
-          <meta key="meta-screen-ori" name="screen-orientation" content="landscape" />
-          <meta key="meta-x5-ori" name="x5-orientation" content="landscape" />
-          {/* Google Fonts */}
-          <link key="font-pre-1" rel="preconnect" href="https://fonts.googleapis.com" />
-          <link key="font-pre-2" rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          <link
-            key="font-link"
-            href="https://fonts.googleapis.com/css2?family=Bungee&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap"
-            rel="stylesheet"
+        <body className="bg-zinc-950 text-white font-sans antialiased overflow-x-hidden w-full min-h-screen">
+          <Script
+            src="https://cdn.tailwindcss.com"
+            strategy="beforeInteractive"
           />
-          {/* Tailwind CSS CDN & Naija Custom Theme */}
-          <script key="tw-cdn" src="https://cdn.tailwindcss.com"></script>
-          <script
-            key="tw-cfg"
-            dangerouslySetInnerHTML={{
-              __html: `
-                tailwind.config = {
-                  theme: {
-                    extend: {
-                      fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-                        display: ['Bungee', 'cursive', 'sans-serif']
-                      },
-                      colors: {
-                        naija: {
-                          green: '#008751',
-                          gold: '#fbbf24',
-                          sand: '#b36b41',
-                          brick: '#78350f'
-                        }
+          <Script id="tailwind-config" strategy="beforeInteractive">
+            {`
+              tailwind.config = {
+                theme: {
+                  extend: {
+                    fontFamily: {
+                      sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                      display: ['Bungee', 'cursive', 'sans-serif']
+                    },
+                    colors: {
+                      naija: {
+                        green: '#008751',
+                        gold: '#fbbf24',
+                        sand: '#b36b41',
+                        brick: '#78350f'
                       }
                     }
                   }
-                };
-              `,
-            }}
-          />
-        </head>
-        <body className="bg-zinc-950 text-white font-sans antialiased overflow-x-hidden w-full min-h-screen">
+                }
+              };
+            `}
+          </Script>
           {children}
         </body>
       </html>
