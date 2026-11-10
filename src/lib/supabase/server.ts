@@ -14,3 +14,4 @@ export const createAdminSupabaseClient = () => {
 };
 
 export const adminSupabase = createAdminSupabaseClient();
+

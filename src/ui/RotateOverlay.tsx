@@ -3,6 +3,7 @@ import { Smartphone, RotateCw, Maximize2, ShieldAlert } from 'lucide-react';
 
 export const RotateOverlay: React.FC = () => {
   const [isPortrait, setIsPortrait] = useState<boolean>(false);
+  const [dismissed, setDismissed] = useState<boolean>(false);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -58,7 +59,7 @@ export const RotateOverlay: React.FC = () => {
     }
   };
 
-  if (!isPortrait) return null;
+  if (!isPortrait || dismissed) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-zinc-950 via-black to-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden touch-none animate-in fade-in duration-200">
@@ -119,10 +120,18 @@ export const RotateOverlay: React.FC = () => {
       {/* Fullscreen & Rotate Trigger Button */}
       <button
         onClick={handleRequestLandscape}
-        className="w-full max-w-xs py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs sm:text-sm shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 active:scale-95 transition-all mb-4"
+        className="w-full max-w-xs py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs sm:text-sm shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 active:scale-95 transition-all mb-2"
       >
         <Maximize2 className="w-4 h-4 fill-current shrink-0" />
         <span>ENTER FULLSCREEN & ROTATE</span>
+      </button>
+
+      {/* Dismiss button to browse hub in portrait anyway */}
+      <button
+        onClick={() => setDismissed(true)}
+        className="text-xs text-amber-400 hover:text-amber-300 underline py-1 px-3 mb-4 transition-colors font-bold"
+      >
+        Browse Arcade Hub in Portrait Anyway →
       </button>
 
       {/* Auto-rotate reminder note */}

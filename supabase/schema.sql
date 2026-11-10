@@ -281,3 +281,4 @@ VALUES
   ('game_assets', 'game_assets', true),
   ('match_replays', 'match_replays', false)
 ON CONFLICT (id) DO NOTHING;
+

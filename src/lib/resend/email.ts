@@ -118,3 +118,4 @@ export async function sendTournamentAlertEmail(to: string, tournamentTitle: stri
     templateName: 'tournament_alert'
   });
 }
+

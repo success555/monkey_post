@@ -5,11 +5,58 @@
   --street-gold: #fbbf24;
 }
 
-body {
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
   margin: 0;
   padding: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  width: 100%;
+  min-height: 100%;
   background-color: #09090b;
+  color: #f3f4f6;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent gesture conflicts ONLY on 3D canvas and analog stick touch zones */
+canvas,
+.touch-none,
+.game-canvas-viewport {
+  touch-action: none !important;
+}
+
+/* Guarantee smooth touch scrolling on mobile horizontal & vertical screens */
+.overflow-y-auto,
+.overflow-y-scroll,
+.scrollable {
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain;
+}
+
+.overflow-x-auto,
+.overflow-x-scroll {
+  touch-action: pan-x !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #fbbf24;
 }

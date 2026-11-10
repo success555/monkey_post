@@ -39,6 +39,26 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(authStore.getCurrentUser());
 
+  // Mobile horizontal (landscape) view detection (< 520px height)
+  const [isMobileLandscape, setIsMobileLandscape] = useState<boolean>(false);
+  const [showHeroInLandscape, setShowHeroInLandscape] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleCheckLandscape = () => {
+      if (typeof window === 'undefined') return;
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const isShortHeight = window.innerHeight <= 540;
+      setIsMobileLandscape(isLandscape && isShortHeight);
+    };
+    handleCheckLandscape();
+    window.addEventListener('resize', handleCheckLandscape);
+    window.addEventListener('orientationchange', handleCheckLandscape);
+    return () => {
+      window.removeEventListener('resize', handleCheckLandscape);
+      window.removeEventListener('orientationchange', handleCheckLandscape);
+    };
+  }, []);
+
   // Subscribe to auth state updates
   useEffect(() => {
     return authStore.subscribe(() => {
@@ -96,7 +116,10 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-zinc-950 text-white flex flex-col overflow-y-auto overflow-x-hidden select-none font-sans">
+    <div 
+      className="fixed inset-0 z-40 bg-zinc-950 text-white flex flex-col overflow-y-auto overflow-x-hidden select-none font-sans scrollable"
+      style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+    >
       {/* Background Street Glow & Vignette */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-600/15 via-zinc-950/90 to-black pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none" />
@@ -144,13 +167,22 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
               </div>
             </button>
           ) : (
-            <button
-              onClick={() => setShowAuthModal(true)}
-              className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-black text-xs font-black uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center space-x-1.5"
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>Sign In</span>
-            </button>
+            <div className="flex items-center space-x-1 sm:space-x-1.5">
+              <a
+                href="/sign-in"
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-xs font-bold transition-all active:scale-95 flex items-center space-x-1"
+              >
+                <User className="w-3.5 h-3.5 text-amber-400" />
+                <span>Sign In</span>
+              </a>
+              <a
+                href="/sign-up"
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-black text-xs font-black uppercase tracking-wider shadow-md shadow-amber-400/20 active:scale-95 transition-all flex items-center space-x-1"
+              >
+                <span>Sign Up</span>
+                <span className="text-[9px] bg-black text-amber-400 font-mono px-1 rounded font-bold hidden xs:inline">+1.5K</span>
+              </a>
+            </div>
           )}
 
           {/* ADMIN PORTAL BUTTON */}
@@ -255,64 +287,104 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
               </div>
             )}
 
-            {/* SPOTLIGHT FEATURED BANNER: MONKEY POST 3D */}
-            <div className="relative rounded-2xl sm:rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-emerald-600/20 to-zinc-900/90 p-3 sm:p-6 shadow-2xl overflow-hidden group">
-              <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 sm:w-48 h-32 sm:h-48 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
-
-              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-6">
-                <div className="flex-1 space-y-1.5 sm:space-y-2.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-lg shadow-emerald-500/30 flex items-center space-x-1">
-                      <Sparkles className="w-2.5 h-2.5" />
-                      <span>FEATURED • PLAYABLE NOW</span>
-                    </span>
-                    <span className="text-[10px] sm:text-xs text-zinc-400 font-bold">
-                      ⚽ 3D African Street Football
-                    </span>
-                  </div>
-
-                  <h2 className="font-display font-black text-xl sm:text-3xl text-white tracking-wide">
-                    MONKEY POST 3D
-                  </h2>
-
-                  <p className="text-zinc-300 text-xs sm:text-sm font-sans max-w-2xl leading-relaxed">
-                    Take the pitch on Lagos asphalt! Battle between Ojuelegba, Mitchells Plain, Enerhen & Hausa Quarters with authentic 3D footballers, painted Africa map center circle, Mama T Provisions storefront, and live Warri commentary.
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
-                    <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-zinc-300">
-                      👥 1 - 2 Players (Local & Online)
-                    </span>
-                    <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-amber-300">
-                      🏆 4 Game Modes
-                    </span>
-                    <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-emerald-300">
-                      📱 Mobile Landscape Ready
-                    </span>
+            {/* SPOTLIGHT FEATURED BANNER */}
+            {isMobileLandscape && !showHeroInLandscape ? (
+              /* COMPACT 48px QUICK-PLAY BAR FOR MOBILE LANDSCAPE (Frees full viewport for all 6 games) */
+              <div className="rounded-2xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-zinc-900 to-black p-2 shadow-lg flex items-center justify-between gap-2 shrink-0">
+                <div className="flex items-center space-x-2 truncate">
+                  <span className="text-xl shrink-0">⚽</span>
+                  <div className="truncate">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="font-display font-black text-xs text-amber-400 truncate">FEATURED: MONKEY POST 3D</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500 text-black font-black uppercase">LIVE</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 truncate">3D African street football on Lagos asphalt • Mama T Provisions</p>
                   </div>
                 </div>
-
-                <div className="shrink-0 flex sm:flex-col justify-end">
+                <div className="flex items-center space-x-1.5 shrink-0">
                   <button
                     onClick={() => handleLaunchGame('monkey_post')}
-                    className="w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all active:scale-95 group-hover:scale-105"
+                    className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-yellow-300 text-black font-display font-black text-[11px] uppercase tracking-wider shadow active:scale-95 flex items-center space-x-1"
                   >
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>PLAY MONKEY POST NOW</span>
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>PLAY</span>
+                  </button>
+                  <button
+                    onClick={() => setShowHeroInLandscape(true)}
+                    className="px-2 py-1.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white text-[10px] font-bold"
+                  >
+                    Info
                   </button>
                 </div>
               </div>
-            </div>
+            ) : (
+              /* FULL SPOTLIGHT HERO BANNER */
+              <div className="relative rounded-2xl sm:rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-emerald-600/20 to-zinc-900/90 p-3 sm:p-6 shadow-2xl overflow-hidden group">
+                {isMobileLandscape && (
+                  <button
+                    onClick={() => setShowHeroInLandscape(false)}
+                    className="absolute top-2 right-2 z-20 px-2 py-1 rounded-lg bg-zinc-800/90 text-zinc-300 text-[10px] font-bold"
+                  >
+                    Collapse ✕
+                  </button>
+                )}
+                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 sm:w-48 h-32 sm:h-48 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-6">
+                  <div className="flex-1 space-y-1.5 sm:space-y-2.5">
+                    <div className="flex items-center space-x-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-lg shadow-emerald-500/30 flex items-center space-x-1">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        <span>FEATURED • PLAYABLE NOW</span>
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-zinc-400 font-bold">
+                        ⚽ 3D African Street Football
+                      </span>
+                    </div>
+
+                    <h2 className="font-display font-black text-xl sm:text-3xl text-white tracking-wide">
+                      MONKEY POST 3D
+                    </h2>
+
+                    <p className="text-zinc-300 text-xs sm:text-sm font-sans max-w-2xl leading-relaxed">
+                      Take the pitch on Lagos asphalt! Battle between Ojuelegba, Mitchells Plain, Enerhen & Hausa Quarters with authentic 3D footballers, painted Africa map center circle, Mama T Provisions storefront, and live Warri commentary.
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
+                      <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-zinc-300">
+                        👥 1 - 2 Players (Local & Online)
+                      </span>
+                      <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-amber-300">
+                        🏆 4 Game Modes
+                      </span>
+                      <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-emerald-300">
+                        📱 Mobile Landscape Ready
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 flex sm:flex-col justify-end">
+                    <button
+                      onClick={() => handleLaunchGame('monkey_post')}
+                      className="w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all active:scale-95 group-hover:scale-105"
+                    >
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>PLAY MONKEY POST NOW</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* CATEGORY FILTER TABS & CATALOG HEADER */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
-              <div>
+              <div className="flex items-center space-x-2">
                 <h3 className="font-display font-black text-sm sm:text-lg text-white tracking-wide">
                   ALL GAMES CATALOG
                 </h3>
-                <p className="text-[10px] sm:text-xs text-zinc-400">
-                  Select any authentic African street game to start playing
-                </p>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
+                  {filteredGames.length} GAMES PLAYABLE
+                </span>
               </div>
 
               {/* Category Pills */}
@@ -333,52 +405,78 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
               </div>
             </div>
 
-            {/* GAMES CARDS GRID (Responsive 1, 2, or 3 columns) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 pb-8">
+            {/* GAMES CARDS GRID (Dense 3-column in mobile landscape so ALL 6 games fit on phone screen!) */}
+            <div className={`grid gap-2.5 sm:gap-5 pb-8 ${
+              isMobileLandscape 
+                ? 'grid-cols-2 sm:grid-cols-3' 
+                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+            }`}>
               {filteredGames.map(game => (
                 <div
                   key={game.id}
-                  className="group relative rounded-2xl sm:rounded-3xl border border-white/10 bg-zinc-900/90 hover:border-amber-400/60 p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-1 overflow-hidden"
+                  className={`group relative rounded-2xl border border-white/10 bg-zinc-900/90 hover:border-amber-400/60 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 overflow-hidden ${
+                    isMobileLandscape ? 'p-2.5 sm:p-3' : 'p-4 sm:p-5 sm:rounded-3xl hover:-translate-y-1'
+                  }`}
                 >
                   <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${game.bannerGradient} rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity pointer-events-none`} />
 
-                  <div className="relative z-10 space-y-2 sm:space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-zinc-950/80 border border-white/10 flex items-center justify-center text-xl sm:text-2xl shadow-inner">
-                        {game.iconEmoji}
+                  <div className={`relative z-10 ${isMobileLandscape ? 'space-y-1' : 'space-y-2 sm:space-y-3'}`}>
+                    <div className="flex items-start justify-between gap-1">
+                      <div className="flex items-center space-x-2">
+                        <div className={`rounded-xl bg-zinc-950/80 border border-white/10 flex items-center justify-center shadow-inner shrink-0 ${
+                          isMobileLandscape ? 'w-8 h-8 text-lg' : 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl'
+                        }`}>
+                          {game.iconEmoji}
+                        </div>
+                        {isMobileLandscape && (
+                          <div className="truncate">
+                            <h4 className="font-display font-black text-xs sm:text-sm text-white group-hover:text-amber-400 transition-colors truncate">
+                              {game.title}
+                            </h4>
+                            <span className="text-[9px] text-zinc-400 block truncate">
+                              {game.category} • {game.players}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider ${game.badgeColor} shadow-md`}>
-                        {game.badge}
+                      <span className={`px-2 py-0.5 rounded-full text-[8.5px] sm:text-[10px] font-black uppercase tracking-wider ${game.badgeColor} shadow-md shrink-0`}>
+                        {game.badge === 'PLAYABLE NOW' ? 'READY' : game.badge}
                       </span>
                     </div>
 
-                    <div>
-                      <h4 className="font-display font-black text-base sm:text-lg text-white group-hover:text-amber-400 transition-colors">
-                        {game.title}
-                      </h4>
-                      <p className="text-[11px] sm:text-xs text-zinc-400 font-sans line-clamp-1 mt-0.5">
-                        {game.tagline}
-                      </p>
-                    </div>
+                    {!isMobileLandscape && (
+                      <>
+                        <div>
+                          <h4 className="font-display font-black text-base sm:text-lg text-white group-hover:text-amber-400 transition-colors">
+                            {game.title}
+                          </h4>
+                          <p className="text-[11px] sm:text-xs text-zinc-400 font-sans line-clamp-1 mt-0.5">
+                            {game.tagline}
+                          </p>
+                        </div>
 
-                    <div className="flex items-center space-x-2 text-[10px] sm:text-[11px] text-zinc-400 font-bold">
-                      <span className="px-2 py-0.5 rounded-md bg-black/60 border border-white/5">{game.category}</span>
-                      <span>•</span>
-                      <span>{game.players}</span>
-                    </div>
+                        <div className="flex items-center space-x-2 text-[10px] sm:text-[11px] text-zinc-400 font-bold">
+                          <span className="px-2 py-0.5 rounded-md bg-black/60 border border-white/5">{game.category}</span>
+                          <span>•</span>
+                          <span>{game.players}</span>
+                        </div>
 
-                    <p className="text-zinc-300 text-xs sm:text-[13px] font-sans line-clamp-3 leading-relaxed">
-                      {game.description}
-                    </p>
+                        <p className="text-zinc-300 text-xs sm:text-[13px] font-sans line-clamp-3 leading-relaxed">
+                          {game.description}
+                        </p>
+                      </>
+                    )}
                   </div>
 
-                  <div className="relative z-10 pt-3 sm:pt-4 mt-2 border-t border-white/10">
+                  <div className={`relative z-10 ${isMobileLandscape ? 'pt-2 mt-1' : 'pt-3 sm:pt-4 mt-2'} border-t border-white/10`}>
                     <button
                       onClick={() => handleLaunchGame(game.id)}
-                      className="w-full py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-lg shadow-amber-400/20 flex items-center justify-center space-x-1.5 transition-all active:scale-95"
+                      className={`w-full rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black tracking-wider uppercase shadow-lg shadow-amber-400/20 flex items-center justify-center space-x-1.5 transition-all active:scale-95 ${
+                        isMobileLandscape ? 'py-1.5 text-[11px]' : 'py-2.5 sm:py-3 text-xs sm:text-sm'
+                      }`}
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>{game.actionLabel}</span>
+                      <span>{isMobileLandscape ? 'PLAY' : game.actionLabel}</span>
                     </button>
                   </div>
                 </div>

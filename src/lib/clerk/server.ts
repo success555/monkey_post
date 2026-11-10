@@ -30,3 +30,4 @@ export async function getAuthContext(): Promise<AuthContext> {
     return { userId: null, isAdmin: false };
   }
 }
+

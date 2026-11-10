@@ -69,10 +69,11 @@ export default function RootLayout({
             }}
           />
         </head>
-        <body className="bg-zinc-950 text-white font-sans antialiased overflow-hidden w-screen h-screen">
+        <body className="bg-zinc-950 text-white font-sans antialiased overflow-x-hidden w-full min-h-screen">
           {children}
         </body>
       </html>
     </ClerkProvider>
   );
 }
+

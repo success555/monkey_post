@@ -9,3 +9,4 @@ export const createBrowserSupabaseClient = () => {
 };
 
 export const supabase = createBrowserSupabaseClient();
+
