@@ -10,6 +10,7 @@ import { PenaltyShootoutHUD } from './ui/PenaltyShootout';
 import { RotateOverlay } from './ui/RotateOverlay';
 import { ArcadeHub } from './ui/ArcadeHub';
 import { AyoGame } from './games/ayo/AyoGame';
+import { WhotGame } from './games/whot/WhotGame';
 import {
   GameMode,
   MatchScore,
@@ -210,6 +211,11 @@ export const App: React.FC = () => {
       {/* --- AYÒ OLỌ́PỌ́N 3D GAME EXPERIENCE --- */}
       {activeGameId === 'ayo_olopon' && (
         <AyoGame onExit={handleReturnToHub} />
+      )}
+
+      {/* --- NAIJA WHOT! CARD GAME EXPERIENCE --- */}
+      {activeGameId === 'naija_whot' && (
+        <WhotGame onExit={handleReturnToHub} />
       )}
 
       {/* --- MONKEY POST 3D GAME EXPERIENCE --- */}

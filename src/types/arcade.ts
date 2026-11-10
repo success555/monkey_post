@@ -1,12 +1,12 @@
 export type GameStatus = 'playable' | 'coming_soon' | 'in_development';
 
-export type GameCategory = 'All' | 'Sports' | 'Strategy' | 'Rhythm' | 'Arcade';
+export type GameCategory = 'All' | 'Sports' | 'Strategy' | 'Cards' | 'Rhythm' | 'Arcade';
 
 export interface ArcadeGame {
   id: string;
   title: string;
   tagline: string;
-  category: 'Sports' | 'Strategy' | 'Rhythm' | 'Arcade';
+  category: 'Sports' | 'Strategy' | 'Cards' | 'Rhythm' | 'Arcade';
   status: GameStatus;
   players: string;
   difficulty: 'Casual' | 'Competitive' | 'Hardcore';

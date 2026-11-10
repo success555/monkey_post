@@ -183,7 +183,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
 
           {/* Category Tabs */}
           <div className="flex items-center space-x-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            {(['All', 'Sports', 'Strategy', 'Arcade'] as GameCategory[]).map(cat => (
+            {(['All', 'Sports', 'Strategy', 'Cards', 'Arcade'] as GameCategory[]).map(cat => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -193,7 +193,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                     : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-white/5'
                 }`}
               >
-                {cat === 'All' ? 'All Games (5)' : cat}
+                {cat === 'All' ? `All Games (${ARCADE_GAMES.length})` : cat}
               </button>
             ))}
           </div>

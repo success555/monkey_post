@@ -62,26 +62,28 @@ export const ARCADE_GAMES: ArcadeGame[] = [
     actionLabel: 'PLAY AYÒ NOW'
   },
   {
-    id: 'suwe_hopscotch',
-    title: 'Suwé Street Grid',
-    tagline: 'Chalk Box Hopping & House Claiming Battle',
-    category: 'Arcade',
-    status: 'coming_soon',
-    players: '1 - 4 Players',
-    difficulty: 'Casual',
-    badge: 'IN DEVELOPMENT',
-    badgeColor: 'bg-fuchsia-500 text-white shadow-fuchsia-500/50',
-    iconEmoji: '👟',
-    bannerGradient: 'from-fuchsia-600/30 via-purple-800/30 to-black',
-    accentColor: '#d946ef',
-    description: 'Toss your smooth stone into the chalk grid, balance on one leg, leap across zones without touching chalk lines, and build your house on the neighborhood street.',
+    id: 'naija_whot',
+    title: 'Naija Whot! Card Game',
+    tagline: 'The Undisputed National Card Game of Nigeria',
+    category: 'Cards',
+    status: 'playable',
+    players: '1 - 2 Players',
+    difficulty: 'Competitive',
+    badge: 'PLAYABLE NOW',
+    badgeColor: 'bg-emerald-500 text-black shadow-emerald-500/50',
+    iconEmoji: '🃏',
+    bannerGradient: 'from-emerald-700/30 via-yellow-600/30 to-black',
+    accentColor: '#10b981',
+    description: "Play Nigeria's favorite card game with authentic rules: Hold On, Pick Two, Pick Three, Suspension, General Market, and the wild WHOT 20 against master street card player Bros Chidi.",
     features: [
-      'Authentic Street Chalk Grid Physics & Stone Toss',
-      'One-Leg Balance Meter & Quick Reflex Reactions',
-      'Neighborhood Turf Claiming Mode'
+      '54 Authentic Nigerian Whot Cards across 5 Suits + Whot 20',
+      'Real Special Actions: Hold On (1), Pick 2 (2), Pick 3 (5), Suspension (8), General Market (14)',
+      'Smart AI Opponent Bros Chidi with Pidgin Commentary',
+      'Card Slap, Market Slide & Victory Audio FX',
+      'Interactive Shape Caller Modal & Last Card Warnings'
     ],
-    controlsSummary: 'Swipe to aim stone toss, tap rhythm to hop & turn',
-    actionLabel: 'EXPLORE PREVIEW'
+    controlsSummary: 'Tap card in hand to play, tap Market pile to draw',
+    actionLabel: 'PLAY WHOT NOW'
   },
   {
     id: 'ten_ten',

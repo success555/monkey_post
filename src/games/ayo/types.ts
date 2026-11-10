@@ -37,3 +37,4 @@ export interface MoveResult {
   isGameOver: boolean;
   winner: Player | 'draw' | null;
 }
+
