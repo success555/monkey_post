@@ -9,6 +9,7 @@ interface MatchOverProps {
   winner: string;
   onRematch: () => void;
   onReturnMenu: () => void;
+  onExitToHub?: () => void;
 }
 
 export const MatchOverModal: React.FC<MatchOverProps> = ({
@@ -17,7 +18,8 @@ export const MatchOverModal: React.FC<MatchOverProps> = ({
   awayTeam,
   winner,
   onRematch,
-  onReturnMenu
+  onReturnMenu,
+  onExitToHub
 }) => {
   const isHomeWinner = score.home > score.away;
   const isDraw = score.home === score.away;
@@ -77,22 +79,33 @@ export const MatchOverModal: React.FC<MatchOverProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="w-full grid grid-cols-2 gap-2 sm:gap-3 mt-1.5 sm:mt-2">
-          <button
-            onClick={onRematch}
-            className="py-2.5 sm:py-3 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs sm:text-sm flex items-center justify-center space-x-1.5 shadow-lg active:scale-95 transition-all"
-          >
-            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>REMATCH</span>
-          </button>
+        <div className="w-full flex flex-col space-y-2 mt-1.5 sm:mt-2">
+          <div className="w-full grid grid-cols-2 gap-2 sm:gap-3">
+            <button
+              onClick={onRematch}
+              className="py-2.5 sm:py-3 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs sm:text-sm flex items-center justify-center space-x-1.5 shadow-lg active:scale-95 transition-all"
+            >
+              <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>REMATCH</span>
+            </button>
 
-          <button
-            onClick={onReturnMenu}
-            className="py-2.5 sm:py-3 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-black text-xs sm:text-sm flex items-center justify-center space-x-1.5 border border-white/10 active:scale-95 transition-all"
-          >
-            <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>MAIN MENU</span>
-          </button>
+            <button
+              onClick={onReturnMenu}
+              className="py-2.5 sm:py-3 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-black text-xs sm:text-sm flex items-center justify-center space-x-1.5 border border-white/10 active:scale-95 transition-all"
+            >
+              <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>MATCH SETUP</span>
+            </button>
+          </div>
+
+          {onExitToHub && (
+            <button
+              onClick={onExitToHub}
+              className="w-full py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-400/30 flex items-center justify-center space-x-1.5 active:scale-95 transition-all"
+            >
+              <span>← RETURN TO ALL GAMES (ARCADE HUB)</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

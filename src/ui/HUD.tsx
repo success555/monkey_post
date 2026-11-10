@@ -18,6 +18,7 @@ interface HUDProps {
   onToggleMute: () => void;
   onPause: () => void;
   mode: string;
+  onExitToHub?: () => void;
 }
 
 export const HUD: React.FC<HUDProps> = ({
@@ -34,7 +35,8 @@ export const HUD: React.FC<HUDProps> = ({
   isMuted,
   onToggleMute,
   onPause,
-  mode
+  mode,
+  onExitToHub
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showMinimap, setShowMinimap] = useState(true);
@@ -243,6 +245,16 @@ export const HUD: React.FC<HUDProps> = ({
                 <Pause className="w-4 h-4 text-zinc-300" />
                 <span>PAUSE GAME</span>
               </button>
+
+              {/* Exit to Arcade Hub */}
+              {onExitToHub && (
+                <button
+                  onClick={() => { setShowMenu(false); onExitToHub(); }}
+                  className="col-span-2 p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 text-amber-300 font-bold flex items-center justify-center space-x-2 active:scale-95 transition-all text-xs"
+                >
+                  <span>← EXIT TO ARCADE HUB</span>
+                </button>
+              )}
             </div>
 
             {/* Resume Button */}

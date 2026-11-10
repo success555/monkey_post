@@ -10,13 +10,15 @@ interface MainMenuProps {
   onOpenMultiplayer: () => void;
   isMuted: boolean;
   onToggleMute: () => void;
+  onBackToHub?: () => void;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({
   onStartMatch,
   onOpenMultiplayer,
   isMuted,
-  onToggleMute
+  onToggleMute,
+  onBackToHub
 }) => {
   const [selectedHomeIndex, setSelectedHomeIndex] = useState(0); // Enerhen Junction
   const [selectedAwayIndex, setSelectedAwayIndex] = useState(1); // Hausa Quarters
@@ -84,7 +86,18 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       <div className="relative w-full max-w-xl landscape:max-w-4xl bg-zinc-900/95 border border-white/10 rounded-2xl sm:rounded-3xl p-2.5 sm:p-5 shadow-2xl flex flex-col my-auto max-h-[96vh] overflow-y-auto">
         {/* Top Sound, Phone & Help Buttons */}
         <div className="w-full flex justify-between items-center mb-1.5 sm:mb-2.5">
-          <div className="flex space-x-1.5 sm:space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
+            {/* Back to Games Hub */}
+            {onBackToHub && (
+              <button
+                onClick={onBackToHub}
+                className="flex items-center space-x-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 text-[9px] sm:text-xs font-black border border-amber-400/40 shadow-sm transition-all active:scale-95"
+                title="Return to Naija Street Arcade Games Hub"
+              >
+                <span>← ALL GAMES</span>
+              </button>
+            )}
+
             <button
               onClick={() => setShowHowToPlay(true)}
               className="flex items-center space-x-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-[9px] sm:text-xs font-bold border border-white/10 transition-colors"

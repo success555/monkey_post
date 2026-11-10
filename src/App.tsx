@@ -8,6 +8,7 @@ import { MatchOverModal } from './ui/MatchOverModal';
 import { MultiplayerModal } from './ui/MultiplayerModal';
 import { PenaltyShootoutHUD } from './ui/PenaltyShootout';
 import { RotateOverlay } from './ui/RotateOverlay';
+import { ArcadeHub } from './ui/ArcadeHub';
 import {
   GameMode,
   MatchScore,
@@ -23,6 +24,9 @@ import { soundFX } from './audio/SoundFX';
 export const App: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<GameEngine | null>(null);
+
+  // Active Arcade Game: null = Master Arcade Hub, 'monkey_post' = Monkey Post 3D
+  const [activeGameId, setActiveGameId] = useState<string | null>(null);
 
   // Match & Team States
   const [gameMode, setGameMode] = useState<GameMode>('exhibition');
@@ -148,11 +152,19 @@ export const App: React.FC = () => {
     }
   };
 
-  // Return to menu
+  // Return to match setup menu
   const handleReturnMenu = () => {
     setShowMatchOverModal(false);
     setShowMainMenu(true);
     setMatchState('menu');
+  };
+
+  // Return from Monkey Post to Master Arcade Hub
+  const handleReturnToHub = () => {
+    setShowMatchOverModal(false);
+    setShowMainMenu(true);
+    setMatchState('menu');
+    setActiveGameId(null);
   };
 
   // Audio mute toggle
@@ -179,14 +191,32 @@ export const App: React.FC = () => {
       {/* Screen Orientation Gate: Demands device rotation to Landscape before playing */}
       <RotateOverlay />
 
-      {/* 3D WebGL Canvas Viewport */}
+      {/* --- MASTER ARCADE HUB MENU (Default Landing Screen) --- */}
+      {activeGameId === null && (
+        <ArcadeHub
+          onSelectGame={(gameId) => {
+            setActiveGameId(gameId);
+            if (gameId === 'monkey_post') {
+              setShowMainMenu(true);
+              setMatchState('menu');
+            }
+          }}
+          isMuted={isMuted}
+          onToggleMute={handleToggleMute}
+        />
+      )}
+
+      {/* --- MONKEY POST 3D GAME EXPERIENCE --- */}
+      {/* 3D WebGL Canvas Viewport (runs in background for zero-delay instant launch) */}
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />
 
       {/* Naija Pidgin Commentary Banner */}
-      <CommentaryBanner message={commentary} />
+      {activeGameId === 'monkey_post' && (
+        <CommentaryBanner message={commentary} />
+      )}
 
       {/* In-Game HUD (Scoreboard, Timer, Minimap, Camera Switch, etc.) */}
-      {!showMainMenu && (
+      {activeGameId === 'monkey_post' && !showMainMenu && (
         <HUD
           score={score}
           timer={timer}
@@ -202,11 +232,12 @@ export const App: React.FC = () => {
           onToggleMute={handleToggleMute}
           onPause={() => setShowMainMenu(true)}
           mode={gameMode}
+          onExitToHub={handleReturnToHub}
         />
       )}
 
       {/* Penalty Shootout Tracker */}
-      {!showMainMenu && gameMode === 'penalties' && (
+      {activeGameId === 'monkey_post' && !showMainMenu && gameMode === 'penalties' && (
         <PenaltyShootoutHUD
           round={penaltyRound}
           currentTurn={penaltyTurn}
@@ -217,7 +248,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Mobile Touch Virtual Analog Controls */}
-      {!showMainMenu && (
+      {activeGameId === 'monkey_post' && !showMainMenu && (
         <MobileControls
           onMove={(x, z) => engineRef.current?.setMovementInput(x, z)}
           onSprint={(sprinting) => engineRef.current?.setSprintInput(sprinting)}
@@ -231,18 +262,19 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Main Menu Screen */}
-      {showMainMenu && (
+      {/* Monkey Post Main Menu Screen */}
+      {activeGameId === 'monkey_post' && showMainMenu && (
         <MainMenu
           onStartMatch={handleStartMatch}
           onOpenMultiplayer={() => setShowMultiplayerModal(true)}
           isMuted={isMuted}
           onToggleMute={handleToggleMute}
+          onBackToHub={handleReturnToHub}
         />
       )}
 
       {/* Match Over Modal */}
-      {showMatchOverModal && (
+      {activeGameId === 'monkey_post' && showMatchOverModal && (
         <MatchOverModal
           score={score}
           homeTeam={homeTeam}
@@ -250,11 +282,12 @@ export const App: React.FC = () => {
           winner={matchWinner}
           onRematch={handleRematch}
           onReturnMenu={handleReturnMenu}
+          onExitToHub={handleReturnToHub}
         />
       )}
 
       {/* Multiplayer Room Lobby Modal */}
-      {showMultiplayerModal && (
+      {activeGameId === 'monkey_post' && showMultiplayerModal && (
         <MultiplayerModal
           onClose={() => setShowMultiplayerModal(false)}
           onStartMultiplayerMatch={handleStartMultiplayerMatch}
@@ -263,4 +296,3 @@ export const App: React.FC = () => {
     </div>
   );
 };
-
