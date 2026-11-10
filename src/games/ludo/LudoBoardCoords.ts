@@ -11,10 +11,11 @@ export interface WorldPos {
   z: number;
 }
 
-const TILE_SIZE = 0.72;
+// Exact tile size matching the 8.2 unit span of Nigeria_Ludo.glb
+const TILE_SIZE = 0.5857;
 
 // Convert 15x15 grid coordinates to 3D world space
-export function gridToWorld(col: number, row: number, y = 0.22): WorldPos {
+export function gridToWorld(col: number, row: number, y = 0.19): WorldPos {
   return {
     x: (col - 7) * TILE_SIZE,
     y,
@@ -22,7 +23,7 @@ export function gridToWorld(col: number, row: number, y = 0.22): WorldPos {
   };
 }
 
-// 52 Common Track Tile Grid Positions (Starting from Red start tile at col 1, row 6)
+// 52 Common Track Tile Grid Positions
 export const CIRCUIT_GRID_COORDS: GridPos[] = [
   // Red Track (0..12)
   { col: 1, row: 6 },  // 0: Red Start
@@ -85,7 +86,6 @@ export const CIRCUIT_GRID_COORDS: GridPos[] = [
   { col: 0, row: 6 }   // 51: Entry to Red Home
 ];
 
-// Color track offset relative to global 52-tile circuit
 export const COLOR_CIRCUIT_OFFSET: Record<LudoColor, number> = {
   red: 0,
   green: 13,
@@ -93,7 +93,6 @@ export const COLOR_CIRCUIT_OFFSET: Record<LudoColor, number> = {
   blue: 39
 };
 
-// Safe Tiles on the 52-circuit (Cannot be chopped)
 export const SAFE_CIRCUIT_TILES = [0, 8, 13, 21, 26, 34, 39, 47];
 
 // Home Column 5 tiles (step 51..55) + Center House (step 56..57)
@@ -136,31 +135,31 @@ export const HOME_COLUMN_COORDS: Record<LudoColor, GridPos[]> = {
   ]
 };
 
-// Yard Positions for each Color (step = -1, indices 0..3)
-export const YARD_POSITIONS: Record<LudoColor, GridPos[]> = {
+// Exact Yard Spawn Positions matching Nigeria_Ludo.glb
+export const EXACT_YARD_WORLD_POS: Record<LudoColor, WorldPos[]> = {
   red: [
-    { col: 2, row: 2 },
-    { col: 4, row: 2 },
-    { col: 2, row: 4 },
-    { col: 4, row: 4 }
+    { x: -3.60, y: 0.19, z: -3.60 },
+    { x: -2.80, y: 0.19, z: -3.60 },
+    { x: -3.60, y: 0.19, z: -2.80 },
+    { x: -2.80, y: 0.19, z: -2.80 }
   ],
   yellow: [
-    { col: 10, row: 10 },
-    { col: 12, row: 10 },
-    { col: 10, row: 12 },
-    { col: 12, row: 12 }
+    { x: 2.80, y: 0.19, z: 2.80 },
+    { x: 3.60, y: 0.19, z: 2.80 },
+    { x: 2.80, y: 0.19, z: 3.60 },
+    { x: 3.60, y: 0.19, z: 3.60 }
   ],
   green: [
-    { col: 2, row: 10 },
-    { col: 4, row: 10 },
-    { col: 2, row: 12 },
-    { col: 4, row: 12 }
+    { x: -3.60, y: 0.19, z: 2.80 },
+    { x: -2.80, y: 0.19, z: 2.80 },
+    { x: -3.60, y: 0.19, z: 3.60 },
+    { x: -2.80, y: 0.19, z: 3.60 }
   ],
   blue: [
-    { col: 10, row: 2 },
-    { col: 12, row: 2 },
-    { col: 10, row: 4 },
-    { col: 12, row: 4 }
+    { x: 2.80, y: 0.19, z: -3.60 },
+    { x: 3.60, y: 0.19, z: -3.60 },
+    { x: 2.80, y: 0.19, z: -2.80 },
+    { x: 3.60, y: 0.19, z: -2.80 }
   ]
 };
 
@@ -168,10 +167,9 @@ export const YARD_POSITIONS: Record<LudoColor, GridPos[]> = {
  * Get 3D World position for any token given its color, tokenIndex, and step
  */
 export function getTokenWorldPosition(color: LudoColor, tokenIndex: number, step: number): WorldPos {
-  // 1. In Yard
+  // 1. In Yard (Exact position matching the 3D model pedestal)
   if (step === -1) {
-    const yardGrid = YARD_POSITIONS[color][tokenIndex];
-    return gridToWorld(yardGrid.col, yardGrid.row, 0.22);
+    return EXACT_YARD_WORLD_POS[color][tokenIndex];
   }
 
   // 2. On Main Circuit (steps 0 to 50)
@@ -179,11 +177,11 @@ export function getTokenWorldPosition(color: LudoColor, tokenIndex: number, step
     const circuitOffset = COLOR_CIRCUIT_OFFSET[color];
     const globalTileIndex = (step + circuitOffset) % 52;
     const grid = CIRCUIT_GRID_COORDS[globalTileIndex];
-    return gridToWorld(grid.col, grid.row, 0.22);
+    return gridToWorld(grid.col, grid.row, 0.19);
   }
 
   // 3. In Home Stretch / House (steps 51 to 57)
   const homeIndex = Math.min(6, step - 51);
   const homeGrid = HOME_COLUMN_COORDS[color][homeIndex];
-  return gridToWorld(homeGrid.col, homeGrid.row, step === 57 ? 0.35 : 0.22);
+  return gridToWorld(homeGrid.col, homeGrid.row, step === 57 ? 0.32 : 0.19);
 }

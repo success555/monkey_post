@@ -31,3 +31,4 @@ export interface MoveEvaluation {
   isReachingHome: boolean;
   score: number; // AI evaluation weight
 }
+
