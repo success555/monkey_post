@@ -12,6 +12,7 @@ import { UserProfile } from '../auth/types';
 import { UserAuthModal } from './UserAuthModal';
 import { AdminLoginModal } from './AdminLoginModal';
 import { UserProfileModal } from './UserProfileModal';
+import { useUser, UserButton } from '@clerk/nextjs';
 
 interface ArcadeHubProps {
   onSelectGame: (gameId: string) => void;
@@ -65,6 +66,23 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
       setCurrentUser(authStore.getCurrentUser());
     });
   }, []);
+
+  // Sync Clerk authenticated user to Arcade profile
+  const { isSignedIn: isClerkSignedIn, user: clerkUser } = useUser();
+
+  useEffect(() => {
+    if (isClerkSignedIn && clerkUser) {
+      const email = clerkUser.primaryEmailAddress?.emailAddress || `${clerkUser.id}@streetarcade.ng`;
+      const username = clerkUser.username || clerkUser.firstName || 'StreetPlayer';
+      const displayName = clerkUser.fullName || clerkUser.firstName || username;
+      const avatar = (clerkUser.publicMetadata?.avatar as string) || '⚽';
+      
+      const existing = authStore.getCurrentUser();
+      if (!existing || existing.id !== clerkUser.id) {
+        authStore.register(clerkUser.id, email, displayName, avatar);
+      }
+    }
+  }, [isClerkSignedIn, clerkUser]);
 
   // Filter games based on category tab
   const filteredGames = ARCADE_GAMES.filter(game => {
@@ -168,17 +186,11 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
           ) : (
             <div className="flex items-center space-x-1">
               <a
-                href="/sign-in"
-                className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-[11px] font-bold transition-all active:scale-95 flex items-center space-x-1"
+                href="/"
+                className="px-2.5 py-1.5 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-[11px] font-bold transition-all active:scale-95 flex items-center space-x-1"
               >
                 <User className="w-3 h-3 text-amber-400" />
-                <span>Sign In</span>
-              </a>
-              <a
-                href="/sign-up"
-                className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-black text-[11px] font-black uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center space-x-1"
-              >
-                <span>Sign Up</span>
+                <span>Sign In / Register</span>
               </a>
             </div>
           )}

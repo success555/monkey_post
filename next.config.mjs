@@ -12,6 +12,26 @@ const nextConfig = {
         destination: '/dashboard',
         permanent: true,
       },
+      {
+        source: '/sign-in/:path*',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/sign-in',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/sign-up/:path*',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/sign-up',
+        destination: '/',
+        permanent: true,
+      },
     ];
   },
 };
