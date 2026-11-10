@@ -129,6 +129,27 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // Guarantee instant WebGL viewport recalculation whenever Monkey Post is active or match begins
+  useEffect(() => {
+    if (activeGameId === 'monkey_post') {
+      const triggerResize = () => {
+        engineRef.current?.resize();
+      };
+      triggerResize();
+      const raf = requestAnimationFrame(triggerResize);
+      const t1 = setTimeout(triggerResize, 60);
+      const t2 = setTimeout(triggerResize, 180);
+      const t3 = setTimeout(triggerResize, 400);
+
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    }
+  }, [activeGameId, showMainMenu]);
+
   // Start match handler
   const handleStartMatch = (mode: GameMode, home: TeamInfo, away: TeamInfo, durationMinutes: number) => {
     setHomeTeam(home);
@@ -140,7 +161,11 @@ export const App: React.FC = () => {
 
     if (engineRef.current) {
       engineRef.current.initializePlayers(home, away);
+      engineRef.current.resize();
       engineRef.current.startMatch(mode, durationMinutes);
+      requestAnimationFrame(() => engineRef.current?.resize());
+      setTimeout(() => engineRef.current?.resize(), 60);
+      setTimeout(() => engineRef.current?.resize(), 200);
     }
   };
 
@@ -254,7 +279,8 @@ export const App: React.FC = () => {
       {/* 3D WebGL Canvas Viewport (runs in background for zero-delay instant launch) */}
       <div
         ref={containerRef}
-        className={`absolute inset-0 w-full h-full ${activeGameId === 'monkey_post' ? 'block' : 'hidden'}`}
+        className={`absolute inset-0 w-full h-full overflow-hidden ${activeGameId === 'monkey_post' ? 'block z-0' : 'hidden'}`}
+        style={{ width: '100%', height: '100%' }}
       />
 
       {/* Naija Pidgin Commentary Banner */}

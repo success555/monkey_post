@@ -79,6 +79,7 @@ export class GameEngine {
   // Animation Frame
   private animationFrameId: number | null = null;
   private lastTime: number = 0;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -89,8 +90,10 @@ export class GameEngine {
     this.scene.fog = new THREE.FogExp2(0xbae6fd, 0.005);
 
     // 2. Camera setup: wider FOV so street environment & pitch are beautifully framed
-    const aspect = container.clientWidth / container.clientHeight;
-    this.camera = new THREE.PerspectiveCamera(50, aspect, 0.5, 200);
+    const width = container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 800) || 800;
+    const height = container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600) || 600;
+    const aspect = (width > 0 && height > 0) ? width / height : 16 / 9;
+    this.camera = new THREE.PerspectiveCamera(50, Number.isFinite(aspect) && aspect > 0 ? aspect : 16 / 9, 0.5, 200);
     this.camera.position.set(-3.5, 15.5, 18.5);
     this.camera.lookAt(0, 0, -1);
 
@@ -99,12 +102,18 @@ export class GameEngine {
       antialias: true,
       powerPreference: 'high-performance'
     });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setSize(width, height);
+    this.renderer.setPixelRatio(Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.18;
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
+    this.renderer.domElement.style.display = 'block';
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
     container.appendChild(this.renderer.domElement);
 
     // 4. Initialize Core World
@@ -131,14 +140,25 @@ export class GameEngine {
     this.physics.onGoalScored = (scoringTeam) => this.handleGoalScored(scoringTeam);
     this.physics.onCommentary = (text, type) => this.emitCommentary(text, type);
 
-    // 5. Setup Listeners
+    // 5. Setup Listeners & Auto-Resize Observers
     window.addEventListener('resize', this.onWindowResize);
     window.addEventListener('orientationchange', () => {
       this.onWindowResize();
       setTimeout(this.onWindowResize, 100);
       setTimeout(this.onWindowResize, 300);
     });
+
+    if (typeof ResizeObserver !== 'undefined' && this.container) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.onWindowResize();
+      });
+      this.resizeObserver.observe(this.container);
+    }
+
     this.setupDesktopInputs();
+
+    // Initial resize pass on next microtask to sync with rendered DOM layout
+    setTimeout(this.onWindowResize, 0);
 
     // Start Rendering Loop
     this.lastTime = performance.now();
@@ -249,6 +269,9 @@ export class GameEngine {
     this.matchState = 'playing';
     this.score = { home: 0, away: 0 };
     this.matchTimer = durationMinutes * 60;
+
+    // Immediately sync viewport & projection matrices before kickoff
+    this.onWindowResize();
 
     if (this.onScoreUpdate) this.onScoreUpdate(this.score);
     if (this.onTimerUpdate) this.onTimerUpdate(this.matchTimer);
@@ -768,12 +791,18 @@ export class GameEngine {
     }
   }
 
+  public resize = () => {
+    this.onWindowResize();
+  };
+
   private onWindowResize = () => {
     if (!this.container || !this.renderer || !this.camera) return;
-    const width = this.container.clientWidth || window.innerWidth;
-    const height = this.container.clientHeight || window.innerHeight;
-    if (width === 0 || height === 0) return;
-    this.camera.aspect = width / height;
+    const width = this.container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 0);
+    const height = this.container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 0);
+    if (width <= 0 || height <= 0 || !Number.isFinite(width) || !Number.isFinite(height)) return;
+    const aspect = width / height;
+    if (!Number.isFinite(aspect) || aspect <= 0) return;
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
   };
@@ -789,6 +818,10 @@ export class GameEngine {
   public dispose() {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
     }
     window.removeEventListener('resize', this.onWindowResize);
     if (this.renderer.domElement.parentElement) {

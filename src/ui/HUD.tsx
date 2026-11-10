@@ -39,7 +39,7 @@ export const HUD: React.FC<HUDProps> = ({
   onExitToHub
 }) => {
   const [showMenu, setShowMenu] = useState(false);
-  const [showMinimap, setShowMinimap] = useState(true);
+  const [showMinimap, setShowMinimap] = useState(false);
 
   const formatTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
