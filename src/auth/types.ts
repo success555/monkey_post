@@ -48,3 +48,4 @@ export interface Tournament {
   status: 'upcoming' | 'live' | 'completed';
   startDate: string;
 }
+

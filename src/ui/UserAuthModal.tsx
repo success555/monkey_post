@@ -266,3 +266,4 @@ export const UserAuthModal: React.FC<UserAuthModalProps> = ({
     </div>
   );
 };
+
