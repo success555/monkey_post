@@ -1,24 +1,50 @@
-import React, { useState } from 'react';
-import { Play, Sparkles, Plus, Info, Volume2, VolumeX, Users, Trophy, ChevronRight, X, Copy, Check, Gamepad2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Play, Sparkles, Plus, Info, Volume2, VolumeX, Users, Trophy, 
+  ChevronRight, X, Copy, Check, Gamepad2, Shield, User, Coins, 
+  Flame, Zap, ShoppingBag, Target, ArrowRight 
+} from 'lucide-react';
 import { ArcadeGame, GameCategory } from '../types/arcade';
 import { ARCADE_GAMES } from '../games/registry';
 import { soundFX } from '../audio/SoundFX';
+import { authStore } from '../auth/authStore';
+import { UserProfile } from '../auth/types';
+import { UserAuthModal } from './UserAuthModal';
+import { AdminLoginModal } from './AdminLoginModal';
+import { UserProfileModal } from './UserProfileModal';
 
 interface ArcadeHubProps {
   onSelectGame: (gameId: string) => void;
   isMuted: boolean;
   onToggleMute: () => void;
+  onOpenAdmin: () => void;
 }
 
 export const ArcadeHub: React.FC<ArcadeHubProps> = ({
   onSelectGame,
   isMuted,
-  onToggleMute
+  onToggleMute,
+  onOpenAdmin
 }) => {
+  // Navigation & Category states
+  const [activeHubTab, setActiveHubTab] = useState<'games' | 'leaderboard' | 'quests' | 'shop'>('games');
   const [activeCategory, setActiveCategory] = useState<GameCategory>('All');
   const [selectedPreviewGame, setSelectedPreviewGame] = useState<ArcadeGame | null>(null);
   const [showAddGameModal, setShowAddGameModal] = useState<boolean>(false);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
+
+  // Auth Modals
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [showAdminLoginModal, setShowAdminLoginModal] = useState<boolean>(false);
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(authStore.getCurrentUser());
+
+  // Subscribe to auth state updates
+  useEffect(() => {
+    return authStore.subscribe(() => {
+      setCurrentUser(authStore.getCurrentUser());
+    });
+  }, []);
 
   // Filter games based on category tab
   const filteredGames = ARCADE_GAMES.filter(game => {
@@ -31,8 +57,16 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
 
   const handleLaunchGame = (gameId: string) => {
     soundFX.playWhistle(true);
-    soundFX.speakVoiceLine("Welcome to Monkey Post 3D! Street soccer time!");
+    soundFX.speakVoiceLine("Welcome to Naija Street Arcade! Game on!");
     onSelectGame(gameId);
+  };
+
+  const handleAdminClick = () => {
+    if (currentUser?.role === 'admin') {
+      onOpenAdmin();
+    } else {
+      setShowAdminLoginModal(true);
+    }
   };
 
   const handleCopyAddGameCode = () => {
@@ -41,7 +75,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
   id: 'my_new_game',
   title: 'My Street Game',
   tagline: 'Exciting street gameplay',
-  category: 'Sports', // 'Sports' | 'Strategy' | 'Rhythm' | 'Arcade'
+  category: 'Sports',
   status: 'playable',
   players: '1 - 2 Players',
   difficulty: 'Casual',
@@ -54,12 +88,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
   features: ['Feature 1', 'Feature 2'],
   controlsSummary: 'Touch / Keyboard controls',
   actionLabel: 'PLAY NOW'
-}
-
-// 2. In src/App.tsx, import your game and render when active:
-{activeGameId === 'my_new_game' && (
-  <MyNewGameComponent onExit={() => setActiveGameId(null)} />
-)}`;
+}`;
 
     navigator.clipboard.writeText(codeSnippet);
     setCopiedCode(true);
@@ -67,15 +96,16 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-zinc-950 text-white flex flex-col overflow-y-auto overflow-x-hidden select-none">
+    <div className="fixed inset-0 z-40 bg-zinc-950 text-white flex flex-col overflow-y-auto overflow-x-hidden select-none font-sans">
       {/* Background Street Glow & Vignette */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-600/15 via-zinc-950/90 to-black pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none" />
 
-      {/* Top Navigation Bar */}
-      <header className="relative z-10 w-full px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-white/10 bg-black/60 backdrop-blur-md flex items-center justify-between shrink-0">
+      {/* TOP DASHBOARD NAVIGATION BAR */}
+      <header className="relative z-10 w-full px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-white/10 bg-black/75 backdrop-blur-md flex items-center justify-between shrink-0">
+        {/* Left: Brand Logo & Title */}
         <div className="flex items-center space-x-2 sm:space-x-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-lg sm:text-xl shadow-lg shadow-amber-500/20">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-lg sm:text-xl shadow-lg shadow-amber-500/20 shrink-0">
             🦁
           </div>
           <div>
@@ -84,29 +114,69 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                 NAIJA STREET ARCADE
               </h1>
               <span className="text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-400 text-black uppercase tracking-wider">
-                HUB
+                DASHBOARD
               </span>
             </div>
             <p className="text-[9.5px] sm:text-xs text-zinc-400 font-sans hidden xs:block">
-              African Street Sports & Classic Games Catalog
+              Nigeria's #1 3D Street Sports & Classic Games Arena
             </p>
           </div>
         </div>
 
-        {/* Right Action Controls */}
+        {/* Right: User Profile, Admin Portal, Audio & Add Game */}
         <div className="flex items-center space-x-1.5 sm:space-x-2.5">
-          {/* Add Your Game Guide Button */}
+          {/* USER PROFILE PILL OR LOGIN BUTTON */}
+          {currentUser ? (
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center space-x-1.5 sm:space-x-2 p-1 sm:pr-3 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 transition-all active:scale-95 shadow-md"
+            >
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-sm sm:text-base shrink-0">
+                {currentUser.avatar}
+              </div>
+              <div className="text-left hidden sm:block">
+                <div className="text-xs font-bold text-white leading-tight truncate max-w-[100px]">
+                  {currentUser.displayName}
+                </div>
+                <div className="text-[10px] text-amber-400 font-mono font-bold">
+                  🪙 {currentUser.streetCoins.toLocaleString()}
+                </div>
+              </div>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-black text-xs font-black uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center space-x-1.5"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
+
+          {/* ADMIN PORTAL BUTTON */}
           <button
-            onClick={() => setShowAddGameModal(true)}
-            className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 border border-white/10 text-zinc-200 hover:text-white text-[11px] sm:text-xs font-bold flex items-center space-x-1.5 active:scale-95 transition-all shadow-md"
-            title="How to add other games to this menu"
+            onClick={handleAdminClick}
+            className={`px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1 transition-all active:scale-95 border shadow-md ${
+              currentUser?.role === 'admin'
+                ? 'bg-amber-500 text-black border-amber-400 font-black shadow-amber-500/20'
+                : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 border-white/10'
+            }`}
+            title="Arcade Administrator Control Center"
           >
-            <Plus className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Add Game</span>
-            <span className="sm:hidden">Add</span>
+            <Shield className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Admin</span>
           </button>
 
-          {/* Sound Mute Toggle */}
+          {/* Add Game Guide */}
+          <button
+            onClick={() => setShowAddGameModal(true)}
+            className="p-1.5 sm:p-2 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 border border-white/10 text-amber-400 active:scale-95 transition-all shadow-md"
+            title="How to add custom games"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+
+          {/* Sound Toggle */}
           <button
             onClick={onToggleMute}
             className="p-1.5 sm:p-2 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 border border-white/10 text-white active:scale-95 transition-all shadow-md"
@@ -117,333 +187,440 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
         </div>
       </header>
 
-      {/* Main Content Area */}
+      {/* DASHBOARD NAV TABS */}
+      <div className="relative z-10 w-full px-3 sm:px-6 py-2 border-b border-white/5 bg-zinc-950/80 backdrop-blur-sm shrink-0">
+        <div className="max-w-6xl mx-auto flex items-center justify-between overflow-x-auto no-scrollbar">
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            {[
+              { id: 'games', label: 'Arcade Games (6)', icon: Gamepad2 },
+              { id: 'leaderboard', label: 'Street Leaderboard', icon: Trophy },
+              { id: 'quests', label: 'Daily Quests & Coins', icon: Target },
+              { id: 'shop', label: 'Street Vault Shop', icon: ShoppingBag }
+            ].map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeHubTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveHubTab(tab.id as any)}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                    isActive
+                      ? 'bg-amber-500 text-black font-black shadow-md'
+                      : 'text-zinc-400 hover:text-white bg-zinc-900/60'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* MAIN DASHBOARD CONTENT AREA */}
       <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5 flex flex-col space-y-4 sm:space-y-6">
-        {/* Spotlight Featured Banner: MONKEY POST 3D */}
-        <div className="relative rounded-2xl sm:rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-emerald-600/20 to-zinc-900/90 p-3 sm:p-6 shadow-2xl overflow-hidden group">
-          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 sm:w-48 h-32 sm:h-48 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-6">
-            <div className="flex-1 space-y-1.5 sm:space-y-2.5">
-              <div className="flex items-center space-x-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-lg shadow-emerald-500/30 flex items-center space-x-1">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  <span>FEATURED • PLAYABLE NOW</span>
-                </span>
-                <span className="text-[10px] sm:text-xs text-zinc-400 font-bold">
-                  ⚽ 3D African Street Football
-                </span>
-              </div>
-
-              <h2 className="font-display font-black text-xl sm:text-3xl text-white tracking-wide">
-                MONKEY POST 3D
-              </h2>
-
-              <p className="text-zinc-300 text-xs sm:text-sm font-sans max-w-2xl leading-relaxed">
-                Take the pitch on Lagos asphalt! Battle between Ojuelegba, Mitchells Plain, Enerhen & Hausa Quarters with authentic 3D footballers, painted Africa map center circle, Mama T Provisions storefront, and live Warri commentary.
-              </p>
-
-              {/* Quick Feature Badges */}
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
-                <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-zinc-300">
-                  👥 1 - 2 Players (Local & Online)
-                </span>
-                <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-amber-300">
-                  🏆 4 Game Modes
-                </span>
-                <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-emerald-300">
-                  📱 Mobile Landscape Ready
-                </span>
-              </div>
-            </div>
-
-            {/* Launch Button */}
-            <div className="shrink-0 flex sm:flex-col items-center justify-end gap-2">
-              <button
-                onClick={() => handleLaunchGame(featuredGame.id)}
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs sm:text-base tracking-wide flex items-center justify-center space-x-2 shadow-xl shadow-amber-500/25 active:scale-95 transition-all group-hover:shadow-amber-500/40"
-              >
-                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-                <span>PLAY MONKEY POST NOW</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Category Filter Tabs & Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
-          <div>
-            <h3 className="font-display font-black text-sm sm:text-lg text-white tracking-wider uppercase">
-              ALL GAMES CATALOG
-            </h3>
-            <p className="text-[10px] sm:text-xs text-zinc-400">
-              Select Monkey Post to start playing or explore upcoming games
-            </p>
-          </div>
-
-          {/* Category Tabs */}
-          <div className="flex items-center space-x-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            {(['All', 'Sports', 'Strategy', 'Cards', 'Arcade'] as GameCategory[]).map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                  activeCategory === cat
-                    ? 'bg-amber-400 text-black shadow-md'
-                    : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-white/5'
-                }`}
-              >
-                {cat === 'All' ? `All Games (${ARCADE_GAMES.length})` : cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Game Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-8">
-          {filteredGames.map(game => {
-            const isPlayable = game.status === 'playable';
-
-            return (
-              <div
-                key={game.id}
-                className={`relative rounded-2xl border transition-all flex flex-col justify-between p-3.5 sm:p-4 bg-gradient-to-b ${game.bannerGradient} ${
-                  isPlayable
-                    ? 'border-amber-400/50 hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/10'
-                    : 'border-white/10 hover:border-white/20'
-                }`}
-              >
-                <div>
-                  {/* Top Card Ribbon */}
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center text-xl shadow-inner">
-                      {game.iconEmoji}
+        {/* ======================================================== */}
+        {/* TAB 1: ALL GAMES CATALOG */}
+        {/* ======================================================== */}
+        {activeHubTab === 'games' && (
+          <>
+            {/* GAMER WELCOME HUD STRIP (When Logged in) */}
+            {currentUser && (
+              <div className="p-3 sm:p-4 rounded-2xl bg-zinc-900/80 border border-white/10 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+                <div className="flex items-center space-x-3">
+                  <div className="text-2xl">{currentUser.avatar}</div>
+                  <div>
+                    <div className="text-xs text-zinc-400 font-bold">
+                      Welcome back, <span className="text-white font-extrabold">{currentUser.displayName}</span>!
                     </div>
-
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm ${game.badgeColor}`}>
-                      {game.badge}
-                    </span>
+                    <div className="text-[11px] text-amber-400 font-bold flex items-center space-x-2">
+                      <span>🏆 {currentUser.rank}</span>
+                      <span>•</span>
+                      <span>Lvl {currentUser.level}</span>
+                      <span>•</span>
+                      <span>{currentUser.stats.winRate}% Win Rate</span>
+                    </div>
                   </div>
-
-                  {/* Title & Tagline */}
-                  <h4 className="font-display font-black text-base sm:text-lg text-white mb-0.5">
-                    {game.title}
-                  </h4>
-                  <p className="text-[11px] text-zinc-400 font-sans line-clamp-1 mb-2">
-                    {game.tagline}
-                  </p>
-
-                  {/* Tags */}
-                  <div className="flex items-center space-x-2 text-[10px] text-zinc-300 font-semibold mb-3">
-                    <span className="px-2 py-0.5 rounded-md bg-black/50 border border-white/5">
-                      {game.category}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-black/50 border border-white/5">
-                      {game.players}
-                    </span>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-zinc-300 text-xs font-sans line-clamp-2 leading-relaxed mb-4">
-                    {game.description}
-                  </p>
                 </div>
 
-                {/* Card Action Button */}
-                <div>
-                  {isPlayable ? (
+                <div className="flex items-center space-x-3 text-xs font-mono font-bold">
+                  <div className="px-3 py-1.5 rounded-xl bg-zinc-950 border border-white/5 text-amber-300">
+                    🪙 {currentUser.streetCoins.toLocaleString()} Coins
+                  </div>
+                  <div className="px-3 py-1.5 rounded-xl bg-zinc-950 border border-white/5 text-emerald-400">
+                    🔥 5-Day Streak
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SPOTLIGHT FEATURED BANNER: MONKEY POST 3D */}
+            <div className="relative rounded-2xl sm:rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-emerald-600/20 to-zinc-900/90 p-3 sm:p-6 shadow-2xl overflow-hidden group">
+              <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 sm:w-48 h-32 sm:h-48 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-6">
+                <div className="flex-1 space-y-1.5 sm:space-y-2.5">
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-black shadow-lg shadow-emerald-500/30 flex items-center space-x-1">
+                      <Sparkles className="w-2.5 h-2.5" />
+                      <span>FEATURED • PLAYABLE NOW</span>
+                    </span>
+                    <span className="text-[10px] sm:text-xs text-zinc-400 font-bold">
+                      ⚽ 3D African Street Football
+                    </span>
+                  </div>
+
+                  <h2 className="font-display font-black text-xl sm:text-3xl text-white tracking-wide">
+                    MONKEY POST 3D
+                  </h2>
+
+                  <p className="text-zinc-300 text-xs sm:text-sm font-sans max-w-2xl leading-relaxed">
+                    Take the pitch on Lagos asphalt! Battle between Ojuelegba, Mitchells Plain, Enerhen & Hausa Quarters with authentic 3D footballers, painted Africa map center circle, Mama T Provisions storefront, and live Warri commentary.
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
+                    <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-zinc-300">
+                      👥 1 - 2 Players (Local & Online)
+                    </span>
+                    <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-amber-300">
+                      🏆 4 Game Modes
+                    </span>
+                    <span className="text-[9.5px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 text-emerald-300">
+                      📱 Mobile Landscape Ready
+                    </span>
+                  </div>
+                </div>
+
+                <div className="shrink-0 flex sm:flex-col justify-end">
+                  <button
+                    onClick={() => handleLaunchGame('monkey_post')}
+                    className="w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all active:scale-95 group-hover:scale-105"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>PLAY MONKEY POST NOW</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* CATEGORY FILTER TABS & CATALOG HEADER */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+              <div>
+                <h3 className="font-display font-black text-sm sm:text-lg text-white tracking-wide">
+                  ALL GAMES CATALOG
+                </h3>
+                <p className="text-[10px] sm:text-xs text-zinc-400">
+                  Select any authentic African street game to start playing
+                </p>
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex items-center space-x-1 sm:space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
+                {(['All', 'Sports', 'Strategy', 'Cards', 'Arcade'] as GameCategory[]).map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-2.5 sm:px-3 py-1 rounded-xl text-[10.5px] sm:text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${
+                      activeCategory === cat
+                        ? 'bg-amber-400 text-black font-black shadow-md shadow-amber-400/20'
+                        : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 border border-white/5'
+                    }`}
+                  >
+                    {cat} {cat === 'All' ? `(${ARCADE_GAMES.length})` : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* GAMES CARDS GRID (Responsive 1, 2, or 3 columns) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 pb-8">
+              {filteredGames.map(game => (
+                <div
+                  key={game.id}
+                  className="group relative rounded-2xl sm:rounded-3xl border border-white/10 bg-zinc-900/90 hover:border-amber-400/60 p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-1 overflow-hidden"
+                >
+                  <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${game.bannerGradient} rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity pointer-events-none`} />
+
+                  <div className="relative z-10 space-y-2 sm:space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-zinc-950/80 border border-white/10 flex items-center justify-center text-xl sm:text-2xl shadow-inner">
+                        {game.iconEmoji}
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider ${game.badgeColor} shadow-md`}>
+                        {game.badge}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-display font-black text-base sm:text-lg text-white group-hover:text-amber-400 transition-colors">
+                        {game.title}
+                      </h4>
+                      <p className="text-[11px] sm:text-xs text-zinc-400 font-sans line-clamp-1 mt-0.5">
+                        {game.tagline}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-[10px] sm:text-[11px] text-zinc-400 font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-black/60 border border-white/5">{game.category}</span>
+                      <span>•</span>
+                      <span>{game.players}</span>
+                    </div>
+
+                    <p className="text-zinc-300 text-xs sm:text-[13px] font-sans line-clamp-3 leading-relaxed">
+                      {game.description}
+                    </p>
+                  </div>
+
+                  <div className="relative z-10 pt-3 sm:pt-4 mt-2 border-t border-white/10">
                     <button
                       onClick={() => handleLaunchGame(game.id)}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                      className="w-full py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-lg shadow-amber-400/20 flex items-center justify-center space-x-1.5 transition-all active:scale-95"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
                       <span>{game.actionLabel}</span>
                     </button>
-                  ) : (
-                    <button
-                      onClick={() => setSelectedPreviewGame(game)}
-                      className="w-full py-2.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/10 text-zinc-300 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 active:scale-95 transition-all"
-                    >
-                      <Info className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{game.actionLabel}</span>
-                    </button>
-                  )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              ))}
 
-          {/* "+ ADD YOUR GAME" DEVELOPER CARD */}
-          <div
-            onClick={() => setShowAddGameModal(true)}
-            className="rounded-2xl border-2 border-dashed border-amber-400/30 hover:border-amber-400 bg-black/40 hover:bg-amber-500/5 p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all group min-h-[200px]"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-amber-400/30 group-hover:border-amber-400 group-hover:scale-110 flex items-center justify-center text-amber-400 mb-2.5 shadow-lg transition-all">
-              <Plus className="w-6 h-6" />
+              {/* ADD YOUR OWN GAME PROMPT CARD */}
+              <div
+                onClick={() => setShowAddGameModal(true)}
+                className="rounded-2xl sm:rounded-3xl border-2 border-dashed border-white/15 hover:border-amber-400/60 p-5 flex flex-col items-center justify-center text-center space-y-2 cursor-pointer bg-zinc-950/40 hover:bg-zinc-900/50 transition-all group min-h-[220px]"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shadow-lg">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <h4 className="font-display font-bold text-sm text-white group-hover:text-amber-400">
+                  + ADD YOUR GAME
+                </h4>
+                <p className="text-xs text-zinc-400 max-w-[200px]">
+                  Easily plug in your custom React, Canvas, or Three.js games into this menu!
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 2: STREET LEADERBOARD */}
+        {/* ======================================================== */}
+        {activeHubTab === 'leaderboard' && (
+          <div className="space-y-4 animate-in fade-in pb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div>
+                <h3 className="font-display text-base sm:text-lg text-white">Nigeria Street Arcade Rankings</h3>
+                <p className="text-xs text-zinc-400">Top ranked players across Lagos, Warri, Abuja & Kano.</p>
+              </div>
+              <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500 text-emerald-300 font-bold">
+                LIVE SEASON 1 RANKINGS
+              </span>
             </div>
 
-            <h4 className="font-display font-black text-sm text-white group-hover:text-amber-400 uppercase tracking-wider mb-1">
-              + ADD YOUR GAME
-            </h4>
+            <div className="space-y-2.5">
+              {authStore.getUsers().map((u, idx) => (
+                <div
+                  key={u.id}
+                  className={`p-3 sm:p-4 rounded-2xl border backdrop-blur-md flex items-center justify-between transition-all ${
+                    idx === 0 
+                      ? 'bg-gradient-to-r from-amber-500/20 via-zinc-900 to-zinc-900 border-amber-500/50 shadow-xl' 
+                      : 'bg-zinc-900/90 border-white/10'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-display font-black text-sm ${
+                      idx === 0 ? 'bg-amber-400 text-black shadow-md' :
+                      idx === 1 ? 'bg-zinc-300 text-black' :
+                      idx === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-800 text-zinc-400'
+                    }`}>
+                      #{idx + 1}
+                    </div>
 
-            <p className="text-[11px] text-zinc-400 max-w-[220px] font-sans leading-relaxed mb-3">
-              Easily plug in your custom React, Canvas, or Three.js games into this menu!
-            </p>
+                    <div className="text-2xl">{u.avatar}</div>
 
-            <span className="text-[10px] font-bold text-amber-400 group-hover:underline flex items-center space-x-1">
-              <span>View Developer Template</span>
-              <ChevronRight className="w-3 h-3" />
-            </span>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-sm text-white">{u.displayName}</span>
+                        {idx === 0 && <span className="text-xs">👑</span>}
+                      </div>
+                      <div className="text-[11px] text-zinc-400 font-mono">
+                        {u.rank} • Lvl {u.level}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 text-xs font-mono text-right">
+                    <div>
+                      <span className="text-[10px] text-zinc-500 uppercase block">Win Rate</span>
+                      <span className="font-bold text-emerald-400">{u.stats.winRate}%</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-zinc-500 uppercase block">Street Coins</span>
+                      <span className="font-bold text-amber-300">🪙 {u.streetCoins.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 3: DAILY QUESTS & REWARDS */}
+        {/* ======================================================== */}
+        {activeHubTab === 'quests' && (
+          <div className="space-y-4 animate-in fade-in pb-8">
+            <div>
+              <h3 className="font-display text-base sm:text-lg text-white">Daily Street Quests</h3>
+              <p className="text-xs text-zinc-400">Complete challenges to earn Street Coins and rank up.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {[
+                { title: 'Score 2 Goals in Monkey Post 3D', reward: '🪙 500 Coins', progress: '1/2', done: false, icon: '⚽' },
+                { title: 'Roll a Double in Naija Ludo 3D', reward: '🪙 350 Coins', progress: '1/1', done: true, icon: '🎲' },
+                { title: 'Pot 3 Balls in a Row in Snooker', reward: '🪙 400 Coins', progress: '0/3', done: false, icon: '🎱' },
+                { title: 'Play Whot 20 Card against Bros Chidi', reward: '🪙 300 Coins', progress: '1/1', done: true, icon: '🃏' },
+                { title: 'Capture 4 Seeds in Ayò Olọ́pọ́n', reward: '🪙 450 Coins', progress: '2/4', done: false, icon: '🪵' }
+              ].map((q, idx) => (
+                <div key={idx} className="p-4 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-between shadow-lg">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">{q.icon}</span>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-white">{q.title}</h4>
+                      <span className="text-[11px] font-mono font-bold text-amber-400">{q.reward}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    {q.done ? (
+                      <span className="px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500 text-emerald-300 text-xs font-bold flex items-center space-x-1">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>CLAIMED</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs font-mono font-bold text-zinc-400">{q.progress}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 4: STREET VAULT SHOP */}
+        {/* ======================================================== */}
+        {activeHubTab === 'shop' && (
+          <div className="space-y-4 animate-in fade-in pb-8">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-display text-base sm:text-lg text-white">Street Vault Equipment</h3>
+                <p className="text-xs text-zinc-400">Unlock custom balls, cues, and jersey skins with Street Coins.</p>
+              </div>
+              <div className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300">
+                Balance: 🪙 {currentUser?.streetCoins.toLocaleString() || '1,500'}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { title: 'Golden Nigeria Retro Football', price: '2,500 Coins', icon: '⚽', desc: 'Vibrant green-white-gold stitched 3D match ball for Monkey Post.' },
+                { title: 'Ash & Rosewood Cue Stick', price: '3,200 Coins', icon: '🎱', desc: 'Championship English taper with blue Master chalk tip for Snooker 3D.' },
+                { title: 'Carved Iroko Seed Pits', price: '1,800 Coins', icon: '🪵', desc: 'Authentic royal Yoruba patterned seed pits for Ayò Olọ́pọ́n.' },
+                { title: 'Lagos Island Acrylic Ludo Pawns', price: '2,000 Coins', icon: '🎲', desc: 'Transparent glowing physical pawns with custom dice.' },
+                { title: 'Gold Foil Whot Card Deck', price: '1,500 Coins', icon: '🃏', desc: 'Premium metallic finished cards with special audio FX.' }
+              ].map((item, idx) => (
+                <div key={idx} className="p-4 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg flex flex-col justify-between space-y-3">
+                  <div className="space-y-1.5">
+                    <span className="text-3xl">{item.icon}</span>
+                    <h4 className="font-bold text-sm text-white">{item.title}</h4>
+                    <p className="text-xs text-zinc-400">{item.desc}</p>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10 flex justify-between items-center">
+                    <span className="font-mono text-xs font-bold text-amber-400">{item.price}</span>
+                    <button
+                      onClick={() => alert(`Unlocked ${item.title}! Added to your equipment locker.`)}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase tracking-wider"
+                    >
+                      UNLOCK
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* --- MODAL 1: GAME PREVIEW & LORE MODAL --- */}
-      {selectedPreviewGame && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-          <div className="w-full max-w-lg bg-zinc-900 border border-white/20 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">{selectedPreviewGame.iconEmoji}</span>
-                <div>
-                  <h3 className="font-display font-black text-base sm:text-lg text-white">
-                    {selectedPreviewGame.title}
-                  </h3>
-                  <span className="text-[10px] text-zinc-400">{selectedPreviewGame.tagline}</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedPreviewGame(null)}
-                className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      {/* ======================================================== */}
+      {/* MODALS */}
+      {/* ======================================================== */}
 
-            <div className="space-y-3 text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans">
-              <p>{selectedPreviewGame.description}</p>
+      {/* USER LOGIN & REGISTER MODAL */}
+      <UserAuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => setCurrentUser(authStore.getCurrentUser())}
+      />
 
-              <div>
-                <span className="font-bold text-amber-400 block mb-1 uppercase text-xs tracking-wider">
-                  Planned Gameplay Features:
-                </span>
-                <ul className="list-disc pl-5 space-y-1 text-xs text-zinc-300">
-                  {selectedPreviewGame.features.map((f, idx) => (
-                    <li key={idx}>{f}</li>
-                  ))}
-                </ul>
-              </div>
+      {/* ADMIN LOGIN MODAL */}
+      <AdminLoginModal
+        isOpen={showAdminLoginModal}
+        onClose={() => setShowAdminLoginModal(false)}
+        onSuccess={() => onOpenAdmin()}
+      />
 
-              <div className="p-2.5 bg-black/50 rounded-xl border border-white/10">
-                <span className="font-bold text-zinc-400 block text-[10px] uppercase">Controls Preview</span>
-                <span className="text-xs text-white font-mono">{selectedPreviewGame.controlsSummary}</span>
-              </div>
-            </div>
-
-            <div className="pt-2 flex items-center justify-between">
-              <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase ${selectedPreviewGame.badgeColor}`}>
-                {selectedPreviewGame.badge}
-              </span>
-              <button
-                onClick={() => setSelectedPreviewGame(null)}
-                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs"
-              >
-                Close Preview
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* USER PROFILE MODAL */}
+      {currentUser && (
+        <UserProfileModal
+          user={currentUser}
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          onLogout={() => {
+            authStore.logout();
+            setCurrentUser(null);
+          }}
+        />
       )}
 
-      {/* --- MODAL 2: DEVELOPER GUIDE - HOW TO ADD OTHER GAMES --- */}
+      {/* HOW TO ADD A NEW GAME MODAL */}
       {showAddGameModal && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-          <div className="w-full max-w-xl bg-zinc-900 border border-amber-400/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-400 flex items-center justify-center">
-                  <Gamepad2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-display font-black text-base sm:text-lg text-white">
-                    HOW TO ADD YOUR GAMES
-                  </h3>
-                  <span className="text-[10px] text-zinc-400">
-                    Step-by-step developer guide for adding games to this menu
-                  </span>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-xl bg-zinc-900 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl text-left space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+              <h3 className="font-display text-base sm:text-lg text-amber-400 flex items-center space-x-2">
+                <span>➕</span>
+                <span>HOW TO ADD YOUR GAME TO THE HUB</span>
+              </h3>
+              <button onClick={() => setShowAddGameModal(false)} className="text-zinc-400 hover:text-white font-bold p-1">✕</button>
+            </div>
+
+            <div className="text-xs text-zinc-300 space-y-2 leading-relaxed">
+              <p>Adding a new game to the Arcade Dashboard takes only two simple steps:</p>
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 font-mono text-[11px] text-emerald-400">
+                1. Add your entry into <strong>src/games/registry.ts</strong><br />
+                2. Import your component into <strong>src/App.tsx</strong> and render when active!
               </div>
+            </div>
+
+            <div className="flex space-x-2 pt-2">
+              <button
+                onClick={handleCopyAddGameCode}
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5"
+              >
+                {copiedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedCode ? 'COPIED SNIPPET!' : 'COPY CODE TEMPLATE'}</span>
+              </button>
               <button
                 onClick={() => setShowAddGameModal(false)}
-                className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white"
+                className="px-4 py-2.5 rounded-xl bg-zinc-800 text-white font-bold text-xs uppercase"
               >
-                <X className="w-4 h-4" />
+                CLOSE
               </button>
             </div>
-
-            {/* Steps */}
-            <div className="space-y-3 text-xs text-zinc-300 font-sans">
-              <div className="p-3 bg-black/50 rounded-xl border border-white/10 space-y-1">
-                <span className="font-bold text-amber-400 block text-xs">
-                  Step 1: Register in <code>src/games/registry.ts</code>
-                </span>
-                <p className="text-[11px] text-zinc-400">
-                  Open <code>src/games/registry.ts</code> and add an object with your game's id, title, description, category, and badge.
-                </p>
-              </div>
-
-              <div className="p-3 bg-black/50 rounded-xl border border-white/10 space-y-1">
-                <span className="font-bold text-emerald-400 block text-xs">
-                  Step 2: Create your Game Component
-                </span>
-                <p className="text-[11px] text-zinc-400">
-                  Build your game in a folder (e.g. <code>src/games/my_game/MyGame.tsx</code>). Give it an <code>{'onExit: () => void'}</code> prop to return to this hub menu.
-                </p>
-              </div>
-
-              <div className="p-3 bg-black/50 rounded-xl border border-white/10 space-y-1">
-                <span className="font-bold text-cyan-400 block text-xs">
-                  Step 3: Render in <code>src/App.tsx</code>
-                </span>
-                <p className="text-[11px] text-zinc-400">
-                  In <code>src/App.tsx</code>, render your component when <code>activeGameId === 'your_game_id'</code>.
-                </p>
-              </div>
-            </div>
-
-            {/* Code Snippet Box */}
-            <div className="relative rounded-xl bg-black border border-white/10 p-3 text-[10.5px] font-mono text-zinc-300 overflow-x-auto">
-              <div className="flex justify-between items-center mb-1 text-[10px] text-zinc-500">
-                <span>Code Example Template</span>
-                <button
-                  onClick={handleCopyAddGameCode}
-                  className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-400 flex items-center space-x-1"
-                >
-                  {copiedCode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedCode ? 'Copied!' : 'Copy Code'}</span>
-                </button>
-              </div>
-              <pre className="text-zinc-300 whitespace-pre">
-{`// In src/games/registry.ts:
-{
-  id: 'my_game',
-  title: 'My Custom Game',
-  tagline: 'Exciting street gameplay',
-  category: 'Sports',
-  status: 'playable',
-  ...
-}`}
-              </pre>
-            </div>
-
-            {/* Footer */}
-            <button
-              onClick={() => setShowAddGameModal(false)}
-              className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase"
-            >
-              GOT IT, THANKS!
-            </button>
           </div>
         </div>
       )}

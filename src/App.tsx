@@ -9,6 +9,7 @@ import { MultiplayerModal } from './ui/MultiplayerModal';
 import { PenaltyShootoutHUD } from './ui/PenaltyShootout';
 import { RotateOverlay } from './ui/RotateOverlay';
 import { ArcadeHub } from './ui/ArcadeHub';
+import { AdminDashboard } from './ui/AdminDashboard';
 import { AyoGame } from './games/ayo/AyoGame';
 import { WhotGame } from './games/whot/WhotGame';
 import { TenTenGame } from './games/tenten/TenTenGame';
@@ -32,6 +33,7 @@ export const App: React.FC = () => {
 
   // Active Arcade Game: null = Master Arcade Hub, 'monkey_post' = Monkey Post 3D
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
+  const [showAdminDashboard, setShowAdminDashboard] = useState<boolean>(false);
 
   // Match & Team States
   const [gameMode, setGameMode] = useState<GameMode>('exhibition');
@@ -196,8 +198,8 @@ export const App: React.FC = () => {
       {/* Screen Orientation Gate: Demands device rotation to Landscape before playing */}
       <RotateOverlay />
 
-      {/* --- MASTER ARCADE HUB MENU (Default Landing Screen) --- */}
-      {activeGameId === null && (
+      {/* --- MASTER ARCADE HUB DASHBOARD (Default Landing Screen) --- */}
+      {activeGameId === null && !showAdminDashboard && (
         <ArcadeHub
           onSelectGame={(gameId) => {
             setActiveGameId(gameId);
@@ -208,7 +210,13 @@ export const App: React.FC = () => {
           }}
           isMuted={isMuted}
           onToggleMute={handleToggleMute}
+          onOpenAdmin={() => setShowAdminDashboard(true)}
         />
+      )}
+
+      {/* --- ARCADE ADMIN COMMAND DASHBOARD --- */}
+      {showAdminDashboard && (
+        <AdminDashboard onBackToHub={() => setShowAdminDashboard(false)} />
       )}
 
       {/* --- AYÒ OLỌ́PỌ́N 3D GAME EXPERIENCE --- */}
