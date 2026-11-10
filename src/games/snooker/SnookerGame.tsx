@@ -466,3 +466,4 @@ export const SnookerGame: React.FC<SnookerGameProps> = ({ onExit }) => {
     </div>
   );
 };
+

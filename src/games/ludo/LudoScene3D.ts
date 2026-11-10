@@ -15,10 +15,16 @@ export class LudoScene3D {
   private tokensMap: Map<string, THREE.Group> = new Map();
   private tokenHighlights: Map<string, THREE.Mesh> = new Map();
 
-  // 3D Rolling Dice
-  private diceGroup: THREE.Group | null = null;
+  // TWO 3D Rolling Dice
+  private die1Group: THREE.Group | null = null;
+  private die2Group: THREE.Group | null = null;
   private isDiceRolling = false;
   private modelLoaded = false;
+
+  // Camera Mode
+  public cameraMode: 'iso' | 'top' = 'iso';
+  private targetCamPos = new THREE.Vector3(0, 15.0, 11.5);
+  private targetCamLook = new THREE.Vector3(0, 0, 0);
 
   // Interaction
   private raycaster = new THREE.Raycaster();
@@ -37,11 +43,12 @@ export class LudoScene3D {
     this.boardGroup = new THREE.Group();
     this.scene.add(this.boardGroup);
 
-    // Camera setup (Overhead Isometric View)
-    const aspect = container.clientWidth / container.clientHeight;
-    this.camera = new THREE.PerspectiveCamera(44, aspect, 0.1, 100);
-    this.camera.position.set(0, 13.5, 10.5);
-    this.camera.lookAt(0, -0.4, 0);
+    // Camera setup tuned for mobile landscape horizontal view
+    const aspect = container.clientWidth / (container.clientHeight || 1);
+    this.camera = new THREE.PerspectiveCamera(46, aspect, 0.1, 100);
+    this.updateCameraTarget();
+    this.camera.position.copy(this.targetCamPos);
+    this.camera.lookAt(this.targetCamLook);
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -58,39 +65,39 @@ export class LudoScene3D {
   }
 
   private setupLighting() {
-    this.scene.background = new THREE.Color(0x0a0a0c);
+    this.scene.background = new THREE.Color(0x09090b);
 
-    const ambient = new THREE.AmbientLight(0xfff7ed, 0.95);
+    const ambient = new THREE.AmbientLight(0xfff7ed, 1.05);
     this.scene.add(ambient);
 
-    const dirLight = new THREE.DirectionalLight(0xffedd5, 1.4);
-    dirLight.position.set(8, 18, 10);
+    const dirLight = new THREE.DirectionalLight(0xffedd5, 1.6);
+    dirLight.position.set(10, 20, 12);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
     dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 40;
-    dirLight.shadow.bias = -0.0005;
-    const d = 9;
+    dirLight.shadow.camera.far = 45;
+    dirLight.shadow.bias = -0.0004;
+    const d = 11;
     dirLight.shadow.camera.left = -d;
     dirLight.shadow.camera.right = d;
     dirLight.shadow.camera.top = d;
     dirLight.shadow.camera.bottom = -d;
     this.scene.add(dirLight);
 
-    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
-    fillLight.position.set(-10, 12, -8);
+    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.5);
+    fillLight.position.set(-12, 14, -10);
     this.scene.add(fillLight);
   }
 
   /**
-   * Load the uploaded Nigeria_Ludo.glb 3D Model
-   * Extracts authentic custom Nigerian board, yard platforms, 3D pawns, and dice!
+   * Load the uploaded Nigeria_Ludo_Two_Dice.glb 3D Model
+   * Extracts authentic custom Nigerian board, yard platforms, 3D pawns, and TWO dice!
    */
   private loadCustomNigeriaLudoModel() {
     const loader = new GLTFLoader();
     loader.load(
-      '/models/Nigeria_Ludo.glb',
+      '/models/Nigeria_Ludo_Two_Dice.glb',
       (gltf) => {
         const root = gltf.scene;
 
@@ -104,20 +111,37 @@ export class LudoScene3D {
         });
 
         // 1. Separate Static Board Parts:
-        // part_0: Base Board
-        // part_1: Track Lines
-        // part_2: Center Star
-        // part_3: Center Triangle
-        // part_4, 17, 30, 43: Corner Yard Platforms
-        // part_18..29, 31..42: Decorative Green/Blue Yard Pawns
+        // part_0: Base Board (16x16)
+        // part_1..4: Border rails
+        // part_5..8: Corner blocks
+        // part_9: Inner playing field
+        // part_10..13: Inner track borders
+        // part_14..17: Center house pyramid
+        // part_18..27: Track stars & markers
+        // part_28, 29: Yard 1 platform & rim (SW)
+        // part_50, 51: Yard 2 platform & rim (NE)
+        // part_72, 73: Yard 3 platform & rim (NW)
+        // part_94, 95: Yard 4 platform & rim (SE)
+        // Keep decorative resting pawns for Green (Yard 2: part_52..71) & Blue (Yard 3: part_74..93)
         const boardPartNames = [
-          'part_0', 'part_1', 'part_2', 'part_3',
-          'part_4', 'part_17', 'part_30', 'part_43',
-          // Keep secondary yard pawns as decorative resting pawns in yard 2 and 3
+          'part_0', 'part_1', 'part_2', 'part_3', 'part_4',
+          'part_5', 'part_6', 'part_7', 'part_8', 'part_9',
+          'part_10', 'part_11', 'part_12', 'part_13',
+          'part_14', 'part_15', 'part_16', 'part_17',
           'part_18', 'part_19', 'part_20', 'part_21', 'part_22', 'part_23',
-          'part_24', 'part_25', 'part_26', 'part_27', 'part_28', 'part_29',
-          'part_31', 'part_32', 'part_33', 'part_34', 'part_35', 'part_36',
-          'part_37', 'part_38', 'part_39', 'part_40', 'part_41', 'part_42'
+          'part_24', 'part_25', 'part_26', 'part_27',
+          'part_28', 'part_29', 'part_50', 'part_51',
+          'part_72', 'part_73', 'part_94', 'part_95',
+          // Decorative Yard 2 (Green) pawns
+          'part_52', 'part_53', 'part_54', 'part_55', 'part_56',
+          'part_57', 'part_58', 'part_59', 'part_60', 'part_61',
+          'part_62', 'part_63', 'part_64', 'part_65', 'part_66',
+          'part_67', 'part_68', 'part_69', 'part_70', 'part_71',
+          // Decorative Yard 3 (Blue) pawns
+          'part_74', 'part_75', 'part_76', 'part_77', 'part_78',
+          'part_79', 'part_80', 'part_81', 'part_82', 'part_83',
+          'part_84', 'part_85', 'part_86', 'part_87', 'part_88',
+          'part_89', 'part_90', 'part_91', 'part_92', 'part_93'
         ];
 
         const boardHolder = new THREE.Group();
@@ -129,51 +153,60 @@ export class LudoScene3D {
         });
         this.boardGroup.add(boardHolder);
 
-        // 2. Extract Red (Player 1 South) 4 Pawns from Yard 1:
-        // P1.0: part_5, part_6, part_7 (center: -3.60, 0.19, -3.60)
-        // P1.1: part_8, part_9, part_10 (center: -2.80, 0.19, -3.60)
-        // P1.2: part_11, part_12, part_13 (center: -3.60, 0.19, -2.80)
-        // P1.3: part_14, part_15, part_16 (center: -2.80, 0.19, -2.80)
+        // 2. Extract Red (Player 1 South / SW) 4 Interactive Pawns:
         const redPawnConfigs = [
-          { id: 'red_0', parts: ['part_5', 'part_6', 'part_7'], ox: -3.60, oy: 0.19, oz: -3.60 },
-          { id: 'red_1', parts: ['part_8', 'part_9', 'part_10'], ox: -2.80, oy: 0.19, oz: -3.60 },
-          { id: 'red_2', parts: ['part_11', 'part_12', 'part_13'], ox: -3.60, oy: 0.19, oz: -2.80 },
-          { id: 'red_3', parts: ['part_14', 'part_15', 'part_16'], ox: -2.80, oy: 0.19, oz: -2.80 }
+          { id: 'red_0', parts: ['part_30', 'part_31', 'part_32', 'part_33', 'part_34'], ox: -5.65, oy: 0.35, oz: -5.65 },
+          { id: 'red_1', parts: ['part_35', 'part_36', 'part_37', 'part_38', 'part_39'], ox: -4.35, oy: 0.35, oz: -5.65 },
+          { id: 'red_2', parts: ['part_40', 'part_41', 'part_42', 'part_43', 'part_44'], ox: -5.65, oy: 0.35, oz: -4.35 },
+          { id: 'red_3', parts: ['part_45', 'part_46', 'part_47', 'part_48', 'part_49'], ox: -4.35, oy: 0.35, oz: -4.35 }
         ];
 
         redPawnConfigs.forEach((cfg) => {
           this.buildPawnGroupFromGLTF(root, cfg.id, cfg.parts, cfg.ox, cfg.oy, cfg.oz, 'red');
         });
 
-        // 3. Extract Yellow (Player 2 / AI North) 4 Pawns from Yard 4:
-        // P2.0: part_44, part_45, part_46 (center: 2.80, 0.19, 2.80)
-        // P2.1: part_47, part_48, part_49 (center: 3.60, 0.19, 2.80)
-        // P2.2: part_50, part_51, part_52 (center: 2.80, 0.19, 3.60)
-        // P2.3: part_53, part_54, part_55 (center: 3.60, 0.19, 3.60)
+        // 3. Extract Yellow (Player 2 / AI North / SE) 4 Interactive Pawns:
         const yellowPawnConfigs = [
-          { id: 'yellow_0', parts: ['part_44', 'part_45', 'part_46'], ox: 2.80, oy: 0.19, oz: 2.80 },
-          { id: 'yellow_1', parts: ['part_47', 'part_48', 'part_49'], ox: 3.60, oy: 0.19, oz: 2.80 },
-          { id: 'yellow_2', parts: ['part_50', 'part_51', 'part_52'], ox: 2.80, oy: 0.19, oz: 3.60 },
-          { id: 'yellow_3', parts: ['part_53', 'part_54', 'part_55'], ox: 3.60, oy: 0.19, oz: 3.60 }
+          { id: 'yellow_0', parts: ['part_96', 'part_97', 'part_98', 'part_99', 'part_100'], ox: 4.35, oy: 0.35, oz: 4.35 },
+          { id: 'yellow_1', parts: ['part_101', 'part_102', 'part_103', 'part_104', 'part_105'], ox: 5.65, oy: 0.35, oz: 4.35 },
+          { id: 'yellow_2', parts: ['part_106', 'part_107', 'part_108', 'part_109', 'part_110'], ox: 4.35, oy: 0.35, oz: 5.65 },
+          { id: 'yellow_3', parts: ['part_111', 'part_112', 'part_113', 'part_114', 'part_115'], ox: 5.65, oy: 0.35, oz: 5.65 }
         ];
 
         yellowPawnConfigs.forEach((cfg) => {
           this.buildPawnGroupFromGLTF(root, cfg.id, cfg.parts, cfg.ox, cfg.oy, cfg.oz, 'yellow');
         });
 
-        // 4. Extract 3D Dice (part_56 cube + part_57, 58, 59 pips):
-        // Original center: 0.00, 0.45, 4.60
-        const diceGroup = new THREE.Group();
-        ['part_56', 'part_57', 'part_58', 'part_59'].forEach((name) => {
+        // 4. Extract TWO 3D DICE:
+        // DIE 1: part_116..123 (original center: -1.20, 2.20, -0.80)
+        const d1Parts = ['part_116', 'part_117', 'part_118', 'part_119', 'part_120', 'part_121', 'part_122', 'part_123'];
+        const d1Group = new THREE.Group();
+        d1Parts.forEach((name) => {
           const part = root.getObjectByName(name) as THREE.Mesh;
           if (part) {
-            part.geometry.translate(0, -0.45, -4.60);
-            diceGroup.add(part);
+            part.geometry.translate(1.20, -2.20, 0.80);
+            d1Group.add(part);
           }
         });
-        diceGroup.position.set(0, 0.45, 0);
-        this.boardGroup.add(diceGroup);
-        this.diceGroup = diceGroup;
+        d1Group.position.set(-1.15, 0.35, 0.0);
+        d1Group.scale.set(0.65, 0.65, 0.65);
+        this.boardGroup.add(d1Group);
+        this.die1Group = d1Group;
+
+        // DIE 2: part_124..131 (original center: 1.30, 2.60, 0.60)
+        const d2Parts = ['part_124', 'part_125', 'part_126', 'part_127', 'part_128', 'part_129', 'part_130', 'part_131'];
+        const d2Group = new THREE.Group();
+        d2Parts.forEach((name) => {
+          const part = root.getObjectByName(name) as THREE.Mesh;
+          if (part) {
+            part.geometry.translate(-1.30, -2.60, -0.60);
+            d2Group.add(part);
+          }
+        });
+        d2Group.position.set(1.15, 0.35, 0.0);
+        d2Group.scale.set(0.65, 0.65, 0.65);
+        this.boardGroup.add(d2Group);
+        this.die2Group = d2Group;
 
         this.modelLoaded = true;
 
@@ -184,7 +217,7 @@ export class LudoScene3D {
       },
       undefined,
       (err) => {
-        console.warn('Failed to load Nigeria_Ludo.glb, using fallback procedural board', err);
+        console.warn('Failed to load Nigeria_Ludo_Two_Dice.glb, using fallback procedural board', err);
         this.buildFallbackBoard();
       }
     );
@@ -205,294 +238,385 @@ export class LudoScene3D {
     const pawnGroup = new THREE.Group();
     pawnGroup.name = tokenId;
 
-    const accentHex = color === 'red' ? 0xdc2626 : 0xf59e0b;
-
-    partNames.forEach((name) => {
-      const part = root.getObjectByName(name) as THREE.Mesh;
+    partNames.forEach((partName) => {
+      const part = root.getObjectByName(partName) as THREE.Mesh;
       if (part) {
-        // Translate vertices so pawn local origin is (0, 0, 0)
         part.geometry.translate(-ox, -oy, -oz);
-
-        // Enhance material with glossy finish and distinct player tint
-        if (part.material) {
-          const mat = (part.material as THREE.MeshStandardMaterial).clone();
-          mat.roughness = 0.25;
-          mat.metalness = 0.15;
-          if (color === 'red') {
-            mat.color.setHex(0xef4444);
-          } else {
-            mat.color.setHex(0xfacc15);
-          }
-          part.material = mat;
-        }
-
         pawnGroup.add(part);
       }
     });
 
-    // Selection Halo Ring around base
-    const haloGeo = new THREE.RingGeometry(0.32, 0.44, 32);
+    // Initial position at original yard coordinate
+    pawnGroup.position.set(ox, oy, oz);
+    this.boardGroup.add(pawnGroup);
+    this.tokensMap.set(tokenId, pawnGroup);
+
+    // Glowing Golden Pulsing Ring Highlight under pawn
+    const haloGeo = new THREE.RingGeometry(0.35, 0.52, 24);
     const haloMat = new THREE.MeshBasicMaterial({
-      color: accentHex,
+      color: 0xfacc15,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0
+      opacity: 0,
+      depthWrite: false
     });
     const halo = new THREE.Mesh(haloGeo, haloMat);
     halo.rotation.x = -Math.PI / 2;
-    halo.position.y = 0.05;
+    halo.position.y = 0.02;
     pawnGroup.add(halo);
     this.tokenHighlights.set(tokenId, halo);
-
-    // Initial position in yard
-    pawnGroup.position.set(ox, oy, oz);
-
-    this.boardGroup.add(pawnGroup);
-    this.tokensMap.set(tokenId, pawnGroup);
   }
 
   /**
-   * Fallback procedural board (only used if GLB fails to load)
+   * Procedural Fallback Board in case GLB fails to fetch
    */
   private buildFallbackBoard() {
-    const baseGeo = new THREE.BoxGeometry(11.8, 0.5, 11.8);
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x3e1f0e, roughness: 0.55 });
-    const base = new THREE.Mesh(baseGeo, woodMat);
-    base.position.y = -0.25;
-    this.boardGroup.add(base);
+    const boardGeo = new THREE.BoxGeometry(16, 0.5, 16);
+    const boardMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.6 });
+    const board = new THREE.Mesh(boardGeo, boardMat);
+    board.position.y = -0.25;
+    board.receiveShadow = true;
+    this.boardGroup.add(board);
+
+    // Fallback Die 1 & Die 2
+    const dieGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+    const dieMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+    this.die1Group = new THREE.Group();
+    this.die1Group.add(new THREE.Mesh(dieGeo, dieMat));
+    this.die1Group.position.set(-1.15, 0.35, 0);
+    this.boardGroup.add(this.die1Group);
+
+    this.die2Group = new THREE.Group();
+    this.die2Group.add(new THREE.Mesh(dieGeo, dieMat));
+    this.die2Group.position.set(1.15, 0.35, 0);
+    this.boardGroup.add(this.die2Group);
+
+    this.modelLoaded = true;
   }
 
   /**
-   * Synchronize all tokens from game state
+   * Synchronize 3D pawn positions with gameplay state
    */
-  public syncTokens(tokens: Record<LudoColor, TokenState[]>, movableIds: string[]) {
-    this.pendingTokensState = tokens;
-    this.pendingMovableIds = movableIds;
+  public syncTokens(tokens: Record<LudoColor, TokenState[]>, movableTokenIds: string[]) {
+    if (!this.modelLoaded) {
+      this.pendingTokensState = tokens;
+      this.pendingMovableIds = movableTokenIds;
+      return;
+    }
 
-    if (!this.modelLoaded) return;
+    for (const color of ['red', 'yellow'] as LudoColor[]) {
+      for (const token of tokens[color]) {
+        const group = this.tokensMap.get(token.id);
+        const halo = this.tokenHighlights.get(token.id);
+        if (!group) continue;
 
-    (['red', 'yellow'] as LudoColor[]).forEach((col) => {
-      tokens[col].forEach((t) => {
-        const group = this.tokensMap.get(t.id);
-        if (!group) return;
+        const targetPos = getTokenWorldPosition(color, token.index, token.step);
 
-        const world = getTokenWorldPosition(col, t.index, t.step);
-        group.position.set(world.x, world.y, world.z);
+        // Smooth position interpolation
+        group.position.x = THREE.MathUtils.lerp(group.position.x, targetPos.x, 0.25);
+        group.position.z = THREE.MathUtils.lerp(group.position.z, targetPos.z, 0.25);
+        group.position.y = THREE.MathUtils.lerp(group.position.y, targetPos.y, 0.25);
 
-        // Highlight if movable
-        const halo = this.tokenHighlights.get(t.id);
+        // Highlight active movable tokens
+        const isMovable = movableTokenIds.includes(token.id);
         if (halo) {
-          const isMovable = movableIds.includes(t.id);
-          const mat = halo.material as THREE.MeshBasicMaterial;
-          mat.opacity = isMovable ? 0.9 : 0;
-          if (isMovable) {
-            mat.color.setHex(0x22c55e); // Bright emerald glow on playable tokens
-          }
+          const haloMat = halo.material as THREE.MeshBasicMaterial;
+          haloMat.opacity = isMovable ? 0.85 : 0.0;
+          haloMat.color.setHex(color === 'red' ? 0xef4444 : 0xfacc15);
         }
-      });
-    });
+      }
+    }
   }
 
   /**
-   * Animate 3D Dice Roll
+   * Animate a pawn hopping step by step along circuit
    */
-  public async animateDiceRoll(targetValue: number): Promise<void> {
-    if (!this.diceGroup || this.isDiceRolling) return;
-    this.isDiceRolling = true;
+  public animatePawnMove(
+    tokenId: string,
+    fromStep: number,
+    toStep: number,
+    color: LudoColor,
+    tokenIndex: number,
+    onComplete: () => void
+  ) {
+    const group = this.tokensMap.get(tokenId);
+    if (!group) {
+      onComplete();
+      return;
+    }
 
-    ludoSound.playDiceShake();
-    ludoSound.playDiceRoll();
+    const stepsToHop: WorldPos[] = [];
+    if (fromStep === -1) {
+      // Opening hop: from yard pedestal to start tile (step 0)
+      stepsToHop.push(getTokenWorldPosition(color, tokenIndex, 0));
+      for (let s = 1; s <= toStep; s++) {
+        stepsToHop.push(getTokenWorldPosition(color, tokenIndex, s));
+      }
+    } else {
+      for (let s = fromStep + 1; s <= toStep; s++) {
+        stepsToHop.push(getTokenWorldPosition(color, tokenIndex, s));
+      }
+    }
 
-    const startRotX = this.diceGroup.rotation.x;
-    const startRotY = this.diceGroup.rotation.y;
-    const startRotZ = this.diceGroup.rotation.z;
+    if (stepsToHop.length === 0) {
+      onComplete();
+      return;
+    }
 
-    // Target rotations to face up:
-    const targetRotations: Record<number, { x: number; z: number }> = {
-      1: { x: 0, z: 0 },
-      2: { x: Math.PI / 2, z: 0 },
-      3: { x: 0, z: -Math.PI / 2 },
-      4: { x: 0, z: Math.PI / 2 },
-      5: { x: -Math.PI / 2, z: 0 },
-      6: { x: Math.PI, z: 0 }
-    };
-
-    const target = targetRotations[targetValue] || { x: 0, z: 0 };
-    const extraSpins = 4 * Math.PI;
-
-    const duration = 650;
-    const startTime = performance.now();
-
-    return new Promise((resolve) => {
-      const updateRoll = (now: number) => {
-        const elapsed = now - startTime;
-        const progress = Math.min(1, elapsed / duration);
-        const ease = 1 - Math.pow(1 - progress, 3);
-
-        const heightArc = Math.sin(progress * Math.PI) * 2.2;
-        this.diceGroup!.position.y = 0.45 + heightArc;
-
-        this.diceGroup!.rotation.x = startRotX + (target.x + extraSpins - startRotX) * ease;
-        this.diceGroup!.rotation.z = startRotZ + (target.z + extraSpins - startRotZ) * ease;
-        this.diceGroup!.rotation.y = startRotY + extraSpins * 0.7 * ease;
-
-        if (progress < 1) {
-          requestAnimationFrame(updateRoll);
-        } else {
-          this.diceGroup!.position.y = 0.45;
-          this.diceGroup!.rotation.set(target.x, 0, target.z);
-          this.isDiceRolling = false;
-          resolve();
-        }
-      };
-
-      requestAnimationFrame(updateRoll);
-    });
-  }
-
-  /**
-   * Parabolic token hop animation
-   */
-  public async animateTokenMove(tokenId: string, startPos: WorldPos, endPos: WorldPos): Promise<void> {
-    const mesh = this.tokensMap.get(tokenId);
-    if (!mesh) return;
+    let currentStepIdx = 0;
+    const hopDuration = 140; // ms per tile
+    let stepStartTime = performance.now();
+    const startPos = { x: group.position.x, y: group.position.y, z: group.position.z };
 
     ludoSound.playTokenHop();
-    const duration = 280;
-    const startTime = performance.now();
-    const peakHeight = Math.max(startPos.y, endPos.y) + 0.85;
 
-    return new Promise((resolve) => {
-      const updateHop = (now: number) => {
-        const elapsed = now - startTime;
-        const progress = Math.min(1, elapsed / duration);
+    const hopAnim = (time: number) => {
+      const elapsed = time - stepStartTime;
+      const t = Math.min(1, elapsed / hopDuration);
 
-        const curX = startPos.x + (endPos.x - startPos.x) * progress;
-        const curZ = startPos.z + (endPos.z - startPos.z) * progress;
-        const heightArc = Math.sin(progress * Math.PI) * peakHeight;
-        const curY = startPos.y + (endPos.y - startPos.y) * progress + heightArc;
+      const target = stepsToHop[currentStepIdx];
+      // Horizontal linear interpolation
+      group.position.x = THREE.MathUtils.lerp(startPos.x, target.x, t);
+      group.position.z = THREE.MathUtils.lerp(startPos.z, target.z, t);
 
-        mesh.position.set(curX, curY, curZ);
+      // Parabolic vertical hop arc (jump 0.5 units in the air)
+      const jumpHeight = 0.55;
+      const arc = 4 * jumpHeight * t * (1 - t);
+      group.position.y = THREE.MathUtils.lerp(startPos.y, target.y, t) + arc;
 
-        if (progress < 1) {
-          requestAnimationFrame(updateHop);
+      if (t >= 1) {
+        group.position.set(target.x, target.y, target.z);
+        currentStepIdx++;
+
+        if (currentStepIdx < stepsToHop.length) {
+          stepStartTime = performance.now();
+          startPos.x = group.position.x;
+          startPos.y = group.position.y;
+          startPos.z = group.position.z;
+          ludoSound.playTokenHop();
+          requestAnimationFrame(hopAnim);
         } else {
-          mesh.position.set(endPos.x, endPos.y, endPos.z);
-          resolve();
+          onComplete();
         }
-      };
+      } else {
+        requestAnimationFrame(hopAnim);
+      }
+    };
 
-      requestAnimationFrame(updateHop);
-    });
+    requestAnimationFrame(hopAnim);
   }
 
   /**
-   * Kpafuka Chop Animation (Token sent flying home to yard)
+   * Physics-like 3D Tumbling Rolling Animation for TWO DICE
    */
-  public async animateChop(tokenId: string, endYardPos: WorldPos): Promise<void> {
-    const mesh = this.tokensMap.get(tokenId);
-    if (!mesh) return;
+  public rollTwoDice3D(val1: number, val2: number, onComplete?: () => void) {
+    if (this.isDiceRolling || !this.die1Group || !this.die2Group) {
+      onComplete?.();
+      return;
+    }
 
-    ludoSound.playChop();
-    const startPos = { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z };
-    const duration = 450;
+    this.isDiceRolling = true;
+    ludoSound.playDiceShake();
+
+    const d1 = this.die1Group;
+    const d2 = this.die2Group;
+
+    const start1 = { x: -1.15, y: 0.35, z: 0 };
+    const start2 = { x: 1.15, y: 0.35, z: 0 };
+
+    const targetRot1 = this.getDiceEulerForValue(val1);
+    const targetRot2 = this.getDiceEulerForValue(val2);
+
+    const duration = 750; // ms
     const startTime = performance.now();
 
-    return new Promise((resolve) => {
-      const updateChop = (now: number) => {
-        const elapsed = now - startTime;
-        const progress = Math.min(1, elapsed / duration);
+    // Random rotational velocity spins
+    const spin1 = {
+      x: (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 4 + targetRot1.x),
+      y: (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 4 + targetRot1.y),
+      z: (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 4 + targetRot1.z)
+    };
+    const spin2 = {
+      x: (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 4 + targetRot2.x),
+      y: (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 4 + targetRot2.y),
+      z: (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 4 + targetRot2.z)
+    };
 
-        const curX = startPos.x + (endYardPos.x - startPos.x) * progress;
-        const curZ = startPos.z + (endYardPos.z - startPos.z) * progress;
-        const heightArc = Math.sin(progress * Math.PI) * 2.5;
-        const curY = startPos.y + heightArc;
+    const rollLoop = (time: number) => {
+      const elapsed = time - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // Ease out bounce curve
+      const ease = Math.sin((progress * Math.PI) / 2);
 
-        mesh.position.set(curX, curY, curZ);
-        mesh.rotation.y += 0.35;
+      // Arc in the air (peaks at y = 2.2)
+      const arc = 4 * 1.85 * progress * (1 - progress);
+      d1.position.y = start1.y + arc;
+      d2.position.y = start2.y + arc;
 
-        if (progress < 1) {
-          requestAnimationFrame(updateChop);
-        } else {
-          mesh.position.set(endYardPos.x, endYardPos.y, endYardPos.z);
-          mesh.rotation.y = 0;
-          resolve();
-        }
-      };
+      // Slight horizontal tumble drift
+      d1.position.x = start1.x - Math.sin(progress * Math.PI) * 0.25;
+      d2.position.x = start2.x + Math.sin(progress * Math.PI) * 0.25;
 
-      requestAnimationFrame(updateChop);
-    });
+      // Spin rotation interpolation
+      d1.rotation.x = THREE.MathUtils.lerp(spin1.x, targetRot1.x, ease);
+      d1.rotation.y = THREE.MathUtils.lerp(spin1.y, targetRot1.y, ease);
+      d1.rotation.z = THREE.MathUtils.lerp(spin1.z, targetRot1.z, ease);
+
+      d2.rotation.x = THREE.MathUtils.lerp(spin2.x, targetRot2.x, ease);
+      d2.rotation.y = THREE.MathUtils.lerp(spin2.y, targetRot2.y, ease);
+      d2.rotation.z = THREE.MathUtils.lerp(spin2.z, targetRot2.z, ease);
+
+      if (progress >= 1) {
+        d1.position.set(start1.x, start1.y, start1.z);
+        d2.position.set(start2.x, start2.y, start2.z);
+        d1.rotation.set(targetRot1.x, targetRot1.y, targetRot1.z);
+        d2.rotation.set(targetRot2.x, targetRot2.y, targetRot2.z);
+
+        ludoSound.playDiceClatter();
+        this.isDiceRolling = false;
+        onComplete?.();
+      } else {
+        requestAnimationFrame(rollLoop);
+      }
+    };
+
+    requestAnimationFrame(rollLoop);
   }
 
-  // Bind mouse and touch events for raycasting
+  /**
+   * Map face number 1..6 to Euler rotation angles (showing correct face up on +Y)
+   */
+  private getDiceEulerForValue(val: number): THREE.Euler {
+    switch (val) {
+      case 1:
+        return new THREE.Euler(Math.PI, 0, 0); // Bottom face up
+      case 2:
+        return new THREE.Euler(-Math.PI / 2, 0, 0);
+      case 3:
+        return new THREE.Euler(0, 0, 0); // Default top face
+      case 4:
+        return new THREE.Euler(Math.PI / 2, 0, 0);
+      case 5:
+        return new THREE.Euler(0, 0, -Math.PI / 2);
+      case 6:
+        return new THREE.Euler(0, 0, Math.PI / 2);
+      default:
+        return new THREE.Euler(0, 0, 0);
+    }
+  }
+
+  /**
+   * Switch Camera Mode: Dynamic 3D Isometric or Top-Down Tactical View
+   */
+  public setCameraMode(mode: 'iso' | 'top') {
+    this.cameraMode = mode;
+    this.updateCameraTarget();
+  }
+
+  private updateCameraTarget() {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+
+    if (this.cameraMode === 'iso') {
+      // Adjusted for mobile horizontal landscape framing
+      const camY = isMobile ? 16.5 : 14.5;
+      const camZ = isMobile ? 12.0 : 10.5;
+      this.targetCamPos.set(0, camY, camZ);
+      this.targetCamLook.set(0, -0.4, 0);
+    } else {
+      // Top-Down Tactical Cam
+      const camY = isMobile ? 21.0 : 19.0;
+      this.targetCamPos.set(0, camY, 0.05);
+      this.targetCamLook.set(0, 0, 0);
+    }
+  }
+
   private bindEvents() {
-    const getCanvasRelativeMouse = (e: MouseEvent | Touch) => {
-      const rect = this.renderer.domElement.getBoundingClientRect();
-      return {
-        x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        y: -((e.clientY - rect.top) / rect.height) * 2 + 1
-      };
-    };
-
-    const handlePointerAction = (coords: { x: number; y: number }) => {
-      if (!this.isInteractive) return;
-      this.mouse.set(coords.x, coords.y);
-      this.raycaster.setFromCamera(this.mouse, this.camera);
-
-      // Check intersect with dice
-      if (this.diceGroup) {
-        const diceHit = this.raycaster.intersectObjects(this.diceGroup.children, true);
-        if (diceHit.length > 0 && this.onDiceClick) {
-          this.onDiceClick();
-          return;
-        }
-      }
-
-      // Check intersect with tokens
-      const tokenObjects: THREE.Object3D[] = [];
-      this.tokensMap.forEach((grp) => tokenObjects.push(...grp.children));
-      const hits = this.raycaster.intersectObjects(tokenObjects, true);
-
-      if (hits.length > 0 && hits[0].object.parent) {
-        const parentName = hits[0].object.parent.name;
-        if (parentName && this.onTokenSelect) {
-          this.onTokenSelect(parentName);
-        }
-      }
-    };
-
-    this.renderer.domElement.addEventListener('click', (e) => {
-      handlePointerAction(getCanvasRelativeMouse(e));
-    });
-
-    this.renderer.domElement.addEventListener('touchstart', (e) => {
-      if (e.touches.length > 0) {
-        handlePointerAction(getCanvasRelativeMouse(e.touches[0]));
-      }
-    });
-
-    window.addEventListener('resize', () => {
-      if (!this.container) return;
-      const width = this.container.clientWidth;
-      const height = this.container.clientHeight;
-      this.camera.aspect = width / height;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(width, height);
+    const dom = this.renderer.domElement;
+    dom.addEventListener('pointerdown', this.onPointerDown);
+    window.addEventListener('resize', this.onResize);
+    window.addEventListener('orientationchange', () => {
+      this.onResize();
+      setTimeout(this.onResize, 150);
+      setTimeout(this.onResize, 350);
     });
   }
+
+  private onPointerDown = (e: PointerEvent) => {
+    if (!this.isInteractive) return;
+
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    // 1. Check Dice click
+    if (this.die1Group && this.die2Group) {
+      const diceHits = this.raycaster.intersectObjects([this.die1Group, this.die2Group], true);
+      if (diceHits.length > 0) {
+        this.onDiceClick?.();
+        return;
+      }
+    }
+
+    // 2. Check Token click
+    for (const [tokenId, group] of this.tokensMap.entries()) {
+      const hits = this.raycaster.intersectObjects(group.children, true);
+      if (hits.length > 0) {
+        this.onTokenSelect?.(tokenId);
+        return;
+      }
+    }
+  };
+
+  private onResize = () => {
+    if (!this.container) return;
+    const w = this.container.clientWidth || 1;
+    const h = this.container.clientHeight || 1;
+    const aspect = w / h;
+
+    this.camera.aspect = aspect;
+    // Responsive dynamic FOV for horizontal phone view
+    const isMobile = w < 1024;
+    const baseFov = isMobile ? (aspect < 1.6 ? 54 : 46) : 42;
+    this.camera.fov = baseFov;
+    this.camera.updateProjectionMatrix();
+
+    this.updateCameraTarget();
+    this.renderer.setSize(w, h);
+  };
 
   private animate = () => {
     this.animFrameId = requestAnimationFrame(this.animate);
-    const t = performance.now() * 0.0006;
-    this.camera.position.x = Math.sin(t * 0.5) * 0.2;
+
+    // Smooth camera transition
+    this.camera.position.lerp(this.targetCamPos, 0.08);
+    const lookTarget = new THREE.Vector3();
+    this.camera.getWorldDirection(lookTarget);
+    lookTarget.multiplyScalar(5).add(this.camera.position);
+    lookTarget.lerp(this.targetCamLook, 0.08);
+    this.camera.lookAt(lookTarget);
+
+    // Gentle floating bob for highlighted movable pawns
+    const time = performance.now() * 0.004;
+    this.tokenHighlights.forEach((halo) => {
+      const mat = halo.material as THREE.MeshBasicMaterial;
+      if (mat.opacity > 0) {
+        halo.scale.setScalar(1.0 + Math.sin(time) * 0.08);
+      }
+    });
+
     this.renderer.render(this.scene, this.camera);
   };
 
-  public dispose() {
+  public destroy() {
     if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+    window.removeEventListener('resize', this.onResize);
+    const dom = this.renderer.domElement;
+    dom.removeEventListener('pointerdown', this.onPointerDown);
     this.renderer.dispose();
-    if (this.renderer.domElement && this.renderer.domElement.parentElement) {
-      this.renderer.domElement.parentElement.removeChild(this.renderer.domElement);
+    if (dom.parentElement) {
+      dom.parentElement.removeChild(dom);
     }
   }
 }

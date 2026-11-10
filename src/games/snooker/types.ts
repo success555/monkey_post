@@ -40,3 +40,4 @@ export interface SnookerGameState {
   winner: 'p1' | 'p2' | null;
   commentary: string;
 }
+

@@ -547,3 +547,4 @@ export class SnookerEngine {
     this.notify();
   }
 }
+

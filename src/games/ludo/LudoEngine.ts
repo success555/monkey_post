@@ -20,6 +20,9 @@ export class LudoEngine {
     return {
       currentTurn: 'red',
       diceValue: null,
+      diceValues: null,
+      diceSum: null,
+      isDoubles: false,
       hasRolled: false,
       consecutiveSixes: 0,
       bonusRoll: false,
@@ -31,8 +34,8 @@ export class LudoEngine {
       },
       winner: null,
       phase: 'roll_dice',
-      lastAction: 'Game begins! Red rolls first.',
-      commentary: "Welcome to Naija Ludo 3D! Shake the dice cup and throw six."
+      lastAction: 'Game begins! Red rolls first with 2 dice.',
+      commentary: "Welcome to Naija Ludo 3D! Shake the two dice and roll six to open!"
     };
   }
 
@@ -50,254 +53,324 @@ export class LudoEngine {
   }
 
   /**
-   * Roll Dice (1 to 6)
+   * Roll Two 3D Dice (each 1 to 6)
    */
-  public rollDice(forcedVal?: number): { value: number; canAnyTokenMove: boolean; extraTurn: boolean } {
+  public rollTwoDice(forced?: [number, number]): {
+    dice: [number, number];
+    sum: number;
+    canAnyTokenMove: boolean;
+    extraTurn: boolean;
+    hasSix: boolean;
+  } {
     if (this.state.phase !== 'roll_dice' || this.state.winner) {
-      return { value: this.state.diceValue || 1, canAnyTokenMove: false, extraTurn: false };
+      const fallback: [number, number] = this.state.diceValues || [1, 1];
+      return {
+        dice: fallback,
+        sum: fallback[0] + fallback[1],
+        canAnyTokenMove: false,
+        extraTurn: false,
+        hasSix: false
+      };
     }
 
-    const value = forcedVal || Math.floor(Math.random() * 6) + 1;
-    this.state.diceValue = value;
+    const d1 = forced ? forced[0] : Math.floor(Math.random() * 6) + 1;
+    const d2 = forced ? forced[1] : Math.floor(Math.random() * 6) + 1;
+    const sum = d1 + d2;
+    const hasSix = (d1 === 6 || d2 === 6);
+    const isDoubles = (d1 === d2);
+
+    this.state.diceValues = [d1, d2];
+    this.state.diceSum = sum;
+    this.state.diceValue = sum;
+    this.state.isDoubles = isDoubles;
     this.state.hasRolled = true;
 
-    // Handle Consecutive Sixes rule
-    if (value === 6) {
+    // Handle 3 consecutive doubles/sixes penalty
+    if (isDoubles || hasSix) {
       this.state.consecutiveSixes += 1;
       if (this.state.consecutiveSixes >= 3) {
-        // Penalty for 3 consecutive sixes in Naija rules!
         this.state.consecutiveSixes = 0;
         this.state.phase = 'roll_dice';
         this.state.hasRolled = false;
+        this.state.bonusRoll = false;
         this.passTurn();
-        this.state.lastAction = 'Three 6s in a row! Penalty! Turn forfeited.';
-        return { value, canAnyTokenMove: false, extraTurn: false };
+        this.state.lastAction = 'Three doubles/sixes in a row! Penalty! Turn forfeited.';
+        return { dice: [d1, d2], sum, canAnyTokenMove: false, extraTurn: false, hasSix };
       }
     } else {
       this.state.consecutiveSixes = 0;
     }
 
-    const movableTokens = this.getMovableTokens(this.state.currentTurn, value);
+    // Determine extra bonus roll for doubles or double six in Nigerian rules
+    const extraTurn = isDoubles || (d1 === 6 && d2 === 6);
+    this.state.bonusRoll = extraTurn;
+
+    const movableTokens = this.getMovableTokens(this.state.currentTurn, [d1, d2]);
 
     if (movableTokens.length === 0) {
-      // No tokens can move!
-      if (value === 6) {
-        // Roll again on 6 even if cannot move
+      if (extraTurn) {
         this.state.phase = 'roll_dice';
         this.state.hasRolled = false;
-        this.state.lastAction = `Rolled a 6! No moves possible, roll bonus again!`;
-        return { value, canAnyTokenMove: false, extraTurn: true };
+        this.state.lastAction = `Rolled [${d1}, ${d2}] Double! No moves possible, roll bonus again!`;
+        return { dice: [d1, d2], sum, canAnyTokenMove: false, extraTurn: true, hasSix };
       } else {
-        this.state.lastAction = `Rolled a ${value}. No moves possible! Turn passes.`;
+        this.state.lastAction = `Rolled [${d1}, ${d2}]. No moves possible! Turn passes.`;
         this.passTurn();
-        return { value, canAnyTokenMove: false, extraTurn: false };
+        return { dice: [d1, d2], sum, canAnyTokenMove: false, extraTurn: false, hasSix };
       }
     }
 
     // Tokens can move! Wait for token selection
     this.state.phase = 'select_token';
-    this.state.lastAction = `Rolled a ${value}! Select a glowing token to move.`;
-    return { value, canAnyTokenMove: true, extraTurn: value === 6 };
+    this.state.lastAction = `Rolled [${d1}, ${d2}] (Total ${sum})! Tap a glowing token to move.`;
+    return { dice: [d1, d2], sum, canAnyTokenMove: true, extraTurn, hasSix };
+  }
+
+  // Backwards compatibility single roll delegator
+  public rollDice(forcedVal?: number): { value: number; canAnyTokenMove: boolean; extraTurn: boolean } {
+    const forced: [number, number] | undefined = forcedVal ? [forcedVal, Math.floor(Math.random() * 6) + 1] : undefined;
+    const res = this.rollTwoDice(forced);
+    return { value: res.sum, canAnyTokenMove: res.canAnyTokenMove, extraTurn: res.extraTurn };
   }
 
   /**
-   * Check if a specific token can legally move given the current dice value
+   * Find all tokens belonging to player that can make a legal move with given dice
    */
-  public canTokenMove(token: TokenState, dice: number): boolean {
-    if (token.isFinished) return false;
+  public getMovableTokens(color: LudoColor, dice: [number, number] | number): TokenState[] {
+    const d1 = Array.isArray(dice) ? dice[0] : dice;
+    const d2 = Array.isArray(dice) ? dice[1] : 0;
+    const sum = Array.isArray(dice) ? d1 + d2 : d1;
+    const hasSix = (d1 === 6 || d2 === 6);
 
-    // In Yard: Requires a 6 to open and step onto starting tile (step 0)
-    if (token.step === -1) {
-      return dice === 6;
-    }
+    const tokens = this.state.tokens[color];
+    const movable: TokenState[] = [];
 
-    // On Track: Cannot overshoot 57 (exact roll to enter house)
-    const newStep = token.step + dice;
-    return newStep <= 57;
-  }
+    for (const t of tokens) {
+      if (t.isFinished) continue;
 
-  /**
-   * Get all movable tokens for a color
-   */
-  public getMovableTokens(color: LudoColor, dice: number): TokenState[] {
-    return this.state.tokens[color].filter(t => this.canTokenMove(t, dice));
-  }
+      // In yard: can open if either die is 6
+      if (t.step === -1) {
+        if (hasSix) {
+          movable.push(t);
+        }
+        continue;
+      }
 
-  /**
-   * Execute Move for a Token
-   */
-  public moveToken(tokenId: string): {
-    success: boolean;
-    choppedToken: TokenState | null;
-    enteredHouse: boolean;
-    bonusRoll: boolean;
-    isGameOver: boolean;
-  } {
-    const dice = this.state.diceValue;
-    if (!dice || this.state.phase !== 'select_token') {
-      return { success: false, choppedToken: null, enteredHouse: false, bonusRoll: false, isGameOver: false };
-    }
-
-    const color = this.state.currentTurn;
-    const token = this.state.tokens[color].find(t => t.id === tokenId);
-    if (!token || !this.canTokenMove(token, dice)) {
-      return { success: false, choppedToken: null, enteredHouse: false, bonusRoll: false, isGameOver: false };
-    }
-
-    let choppedToken: TokenState | null = null;
-    let enteredHouse = false;
-    let bonusRoll = dice === 6;
-
-    // 1. If opening from yard:
-    if (token.step === -1) {
-      token.step = 0;
-      this.state.lastAction = `${color.toUpperCase()} token came out of the yard!`;
-    } else {
-      // 2. Advancing along track:
-      token.step += dice;
-
-      // 3. Check House (step 57)
-      if (token.step === 57) {
-        token.isFinished = true;
-        enteredHouse = true;
-        bonusRoll = true; // Extra roll reward for entering house!
-        this.state.lastAction = `${color.toUpperCase()} token reached HOUSE! 🎉`;
+      // On circuit / home stretch: check if can advance by sum or single die without overshooting 57
+      if (t.step + sum <= 57) {
+        movable.push(t);
+      } else if (t.step + d1 <= 57 || (d2 > 0 && t.step + d2 <= 57)) {
+        movable.push(t);
       }
     }
 
-    // 4. Check Capture / Chopping ("Kpafuka!") on main circuit (steps 0 to 50)
-    if (token.step >= 0 && token.step <= 50) {
-      const globalTile = this.getGlobalCircuitIndex(color, token.step);
+    return movable;
+  }
 
-      // Only vulnerable if NOT on a safe tile
-      if (!SAFE_CIRCUIT_TILES.includes(globalTile)) {
-        // Check opponent tokens on same global tile
-        const opponentColor = color === 'red' ? 'yellow' : 'red';
-        const opponentTokens = this.state.tokens[opponentColor];
+  /**
+   * Move a token according to rolled dice values
+   */
+  public moveToken(tokenId: string): {
+    success: boolean;
+    capturedToken: TokenState | null;
+    isHome: boolean;
+    extraTurn: boolean;
+  } {
+    if (this.state.phase !== 'select_token' || !this.state.diceValues) {
+      return { success: false, capturedToken: null, isHome: false, extraTurn: false };
+    }
 
-        const target = opponentTokens.find(op => {
-          if (op.step < 0 || op.step > 50) return false;
-          return this.getGlobalCircuitIndex(opponentColor, op.step) === globalTile;
-        });
+    const [d1, d2] = this.state.diceValues;
+    const sum = d1 + d2;
+    const hasSix = (d1 === 6 || d2 === 6);
 
-        if (target) {
-          // CHOP! Send opponent token back to yard!
-          target.step = -1;
-          choppedToken = target;
-          bonusRoll = true; // Extra roll reward for chopping!
-          this.state.lastAction = `KPAFUKA! ${color.toUpperCase()} chopped ${opponentColor.toUpperCase()}'s token!`;
+    // Find token
+    let targetToken: TokenState | null = null;
+    for (const color of this.players) {
+      const found = this.state.tokens[color].find(t => t.id === tokenId);
+      if (found) {
+        targetToken = found;
+        break;
+      }
+    }
+
+    if (!targetToken || targetToken.color !== this.state.currentTurn || targetToken.isFinished) {
+      return { success: false, capturedToken: null, isHome: false, extraTurn: false };
+    }
+
+    let extraTurnAwarded = this.state.bonusRoll;
+    let captured: TokenState | null = null;
+
+    // CASE 1: Opening from Yard
+    if (targetToken.step === -1) {
+      if (!hasSix) {
+        return { success: false, capturedToken: null, isHome: false, extraTurn: false };
+      }
+
+      // Yard pawn opens onto Start tile (step 0)
+      // And advances by the non-six die (if one is 6 and the other is > 0)
+      const advanceDie = (d1 === 6 ? d2 : d1);
+      // In Nigerian rules: 6 opens pawn, advanceDie moves it along track!
+      const initialStep = advanceDie > 0 && advanceDie <= 6 ? advanceDie : 0;
+      targetToken.step = initialStep;
+
+      this.state.lastAction = `${targetToken.color.toUpperCase()} pawn opens yard onto track (${initialStep} steps)!`;
+      this.state.commentary = `Yard don open! Oya, safe trip for track!`;
+    }
+    // CASE 2: Moving on track or home stretch
+    else {
+      let moveSteps = sum;
+      if (targetToken.step + sum > 57) {
+        // Fallback to smaller single die if sum overshoots
+        if (targetToken.step + d1 <= 57) {
+          moveSteps = d1;
+        } else if (targetToken.step + d2 <= 57) {
+          moveSteps = d2;
+        } else {
+          return { success: false, capturedToken: null, isHome: false, extraTurn: false };
+        }
+      }
+
+      targetToken.step += moveSteps;
+
+      if (targetToken.step === 57) {
+        targetToken.isFinished = true;
+        extraTurnAwarded = true; // Bonus roll for getting a pawn home!
+        this.state.lastAction = `${targetToken.color.toUpperCase()} pawn reached Home! Bonus roll awarded!`;
+        this.state.commentary = `Goal! Pawn safely inside house!`;
+      } else {
+        this.state.lastAction = `${targetToken.color.toUpperCase()} pawn moved ${moveSteps} steps.`;
+      }
+    }
+
+    // Check Kpafuka Chop Capture (only on main circuit steps 0..50)
+    if (targetToken.step >= 0 && targetToken.step <= 50) {
+      const myGlobalIndex = this.getGlobalCircuitIndex(targetToken.color, targetToken.step);
+      const isSafe = SAFE_CIRCUIT_TILES.includes(myGlobalIndex);
+
+      if (!isSafe) {
+        // Look for opponent tokens occupying this exact global tile
+        for (const otherColor of this.players) {
+          if (otherColor === targetToken.color) continue;
+
+          for (const oppToken of this.state.tokens[otherColor]) {
+            if (oppToken.step >= 0 && oppToken.step <= 50) {
+              const oppGlobal = this.getGlobalCircuitIndex(otherColor, oppToken.step);
+              if (oppGlobal === myGlobalIndex) {
+                // KPAFUKA CHOP! Opponent sent back to yard
+                oppToken.step = -1;
+                captured = oppToken;
+                extraTurnAwarded = true; // Chop gives immediate extra roll!
+                this.state.lastAction = `KPAFUKA! ${targetToken.color.toUpperCase()} chopped ${otherColor.toUpperCase()}! Back to yard!`;
+                this.state.commentary = `Chop chop! Bros don kpafuka opponent pawn! Bonus roll!`;
+                break;
+              }
+            }
+          }
+          if (captured) break;
         }
       }
     }
 
-    // 5. Check Game Over (e.g. 4 tokens in house)
-    const finishedCount = this.state.tokens[color].filter(t => t.isFinished).length;
-    let isGameOver = false;
-
-    if (finishedCount >= 4) {
-      isGameOver = true;
-      this.state.winner = color;
+    // Check Win Condition: all 4 tokens finished
+    const allFinished = this.state.tokens[targetToken.color].every(t => t.isFinished);
+    if (allFinished) {
+      this.state.winner = targetToken.color;
       this.state.phase = 'game_over';
-      this.state.lastAction = `${color.toUpperCase()} HAS WON THE MATCH! LUDO KING! 👑`;
-      return { success: true, choppedToken, enteredHouse, bonusRoll, isGameOver: true };
+      this.state.lastAction = `${targetToken.color.toUpperCase()} WINS THE MATCH!`;
+      this.state.commentary = `VICTORY! ${targetToken.color === 'red' ? 'Player 1' : 'Bros Emeka'} is the Naija Ludo King!`;
+      return {
+        success: true,
+        capturedToken: captured,
+        isHome: targetToken.isFinished,
+        extraTurn: false
+      };
     }
 
-    // 6. Next Turn handling
-    this.state.bonusRoll = bonusRoll;
-    if (bonusRoll) {
+    // Next turn or extra bonus roll
+    if (extraTurnAwarded) {
       this.state.phase = 'roll_dice';
       this.state.hasRolled = false;
-      this.state.diceValue = null;
+      this.state.bonusRoll = false;
     } else {
       this.passTurn();
     }
 
-    return { success: true, choppedToken, enteredHouse, bonusRoll, isGameOver: false };
+    return {
+      success: true,
+      capturedToken: captured,
+      isHome: targetToken.isFinished,
+      extraTurn: extraTurnAwarded
+    };
   }
 
-  /**
-   * Pass turn to next player
-   */
   public passTurn() {
-    const nextColor: LudoColor = this.state.currentTurn === 'red' ? 'yellow' : 'red';
-    this.state.currentTurn = nextColor;
-    this.state.phase = 'roll_dice';
-    this.state.hasRolled = false;
+    this.state.currentTurn = this.state.currentTurn === 'red' ? 'yellow' : 'red';
     this.state.diceValue = null;
-    this.state.consecutiveSixes = 0;
+    this.state.diceValues = null;
+    this.state.diceSum = null;
+    this.state.isDoubles = false;
+    this.state.hasRolled = false;
     this.state.bonusRoll = false;
+    this.state.phase = 'roll_dice';
   }
 
   /**
-   * Smart AI Token Evaluation (Bros Emeka - Naija Ludo King)
+   * AI Decision Engine ("Bros Emeka"): picks the smartest token to move
    */
-  public getBestAIMove(): string | null {
-    const dice = this.state.diceValue;
-    if (!dice) return null;
-
-    const color = this.state.currentTurn;
-    const movable = this.getMovableTokens(color, dice);
+  public getBestAIMove(color: LudoColor): string | null {
+    if (!this.state.diceValues) return null;
+    const movable = this.getMovableTokens(color, this.state.diceValues);
     if (movable.length === 0) return null;
     if (movable.length === 1) return movable[0].id;
 
-    const opponentColor = color === 'red' ? 'yellow' : 'red';
-    const opponentTokens = this.state.tokens[opponentColor];
+    const [d1, d2] = this.state.diceValues;
+    const sum = d1 + d2;
+    const opponentColor: LudoColor = color === 'red' ? 'yellow' : 'red';
 
-    // Evaluate each movable token
     let bestToken = movable[0];
-    let highestScore = -Infinity;
+    let bestScore = -999;
 
-    movable.forEach(t => {
+    for (const t of movable) {
       let score = 0;
 
-      // 1. Bringing token out of yard on 6
-      if (t.step === -1 && dice === 6) {
-        score += 70;
+      // 1. Prioritize opening yard pawn if rolled 6
+      if (t.step === -1) {
+        score += 85;
       }
 
-      // 2. Entering House (step 57)
-      if (t.step + dice === 57) {
-        score += 100;
+      // 2. Prioritize scoring a pawn home
+      if (t.step + sum === 57) {
+        score += 150;
       }
 
-      // 3. Chopping opponent ("Kpafuka!")
-      const newStep = t.step + dice;
-      if (newStep >= 0 && newStep <= 50) {
-        const nextGlobal = this.getGlobalCircuitIndex(color, newStep);
+      // 3. Prioritize captures (Kpafuka chop)
+      const nextStep = t.step + sum;
+      if (nextStep >= 0 && nextStep <= 50) {
+        const nextGlobal = this.getGlobalCircuitIndex(color, nextStep);
         if (!SAFE_CIRCUIT_TILES.includes(nextGlobal)) {
-          const chopOpportunity = opponentTokens.some(op => {
-            if (op.step < 0 || op.step > 50) return false;
-            return this.getGlobalCircuitIndex(opponentColor, op.step) === nextGlobal;
-          });
-          if (chopOpportunity) {
-            score += 150; // Highest priority!
+          for (const opp of this.state.tokens[opponentColor]) {
+            if (opp.step >= 0 && opp.step <= 50) {
+              const oppGlobal = this.getGlobalCircuitIndex(opponentColor, opp.step);
+              if (oppGlobal === nextGlobal) {
+                score += 120; // Massive reward for chop!
+              }
+            }
           }
+        } else {
+          score += 35; // Safe star tile bonus
         }
       }
 
-      // 4. Entering Safe Home Column
-      if (t.step <= 50 && newStep >= 51) {
-        score += 60;
-      }
+      // 4. Progress along track
+      score += t.step * 2;
 
-      // 5. Landing on a safe star tile
-      if (newStep >= 0 && newStep <= 50) {
-        const nextGlobal = this.getGlobalCircuitIndex(color, newStep);
-        if (SAFE_CIRCUIT_TILES.includes(nextGlobal)) {
-          score += 40;
-        }
-      }
-
-      // 6. Moving farthest advanced token
-      score += t.step * 0.5;
-
-      if (score > highestScore) {
-        highestScore = score;
+      if (score > bestScore) {
+        bestScore = score;
         bestToken = t;
       }
-    });
+    }
 
     return bestToken.id;
   }
 }
-

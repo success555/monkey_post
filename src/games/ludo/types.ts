@@ -12,7 +12,10 @@ export interface TokenState {
 
 export interface LudoGameState {
   currentTurn: LudoColor;
-  diceValue: number | null;
+  diceValue: number | null;            // Primary/sum dice value for backwards compatibility
+  diceValues: [number, number] | null; // Two 3D dice values [die1, die2]
+  diceSum: number | null;              // Total combined move distance
+  isDoubles: boolean;                  // True if die1 === die2
   hasRolled: boolean;
   consecutiveSixes: number;
   bonusRoll: boolean;
@@ -31,4 +34,3 @@ export interface MoveEvaluation {
   isReachingHome: boolean;
   score: number; // AI evaluation weight
 }
-

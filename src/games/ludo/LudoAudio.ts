@@ -133,6 +133,14 @@ class LudoSoundManager {
     osc.stop(t + 0.16);
   }
 
+  public playKpafuka() {
+    this.playChop();
+  }
+
+  public playDiceClatter() {
+    this.playDiceRoll();
+  }
+
   // Token Enter Home House / Center Triangle
   public playEnterHome() {
     if (this.isMuted) return;

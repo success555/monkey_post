@@ -1,9 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { 
+  ArrowLeft, Volume2, VolumeX, Eye, HelpCircle, 
+  RotateCcw, Sparkles, Trophy, Zap, Smartphone, RotateCw 
+} from 'lucide-react';
 import { LudoEngine } from './LudoEngine';
 import { LudoScene3D } from './LudoScene3D';
 import { ludoSound } from './LudoAudio';
-import { LudoGameState, GameMode } from './types';
-import { getTokenWorldPosition } from './LudoBoardCoords';
+import { LudoGameState, GameMode, LudoColor } from './types';
 
 interface LudoGameProps {
   onExit: () => void;
@@ -19,7 +22,7 @@ const EMEKA_QUOTES = {
   rollSix: [
     "SIX! Bring your seed out immediately!",
     "Double six! God dey create miracle on this board!",
-    "Bonus roll! Keep the fire burning!"
+    "Two dice in hand! Bonus roll! Keep the fire burning!"
   ],
   chop: [
     "KPAFUKA! Your token don fly back to yard!",
@@ -49,9 +52,33 @@ export const LudoGame: React.FC<LudoGameProps> = ({ onExit }) => {
   const [gameMode, setGameMode] = useState<GameMode>('vs_ai');
   const [isAiThinking, setIsAiThinking] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [commentary, setCommentary] = useState<string>("Welcome to Naija Ludo 3D! Shake the cup and roll six.");
+  const [cameraMode, setCameraMode] = useState<'iso' | 'top'>('iso');
   const [showRules, setShowRules] = useState<boolean>(false);
   const [showWinModal, setShowWinModal] = useState<boolean>(false);
+  const [commentary, setCommentary] = useState<string>("Welcome to Naija Ludo 3D! Shake the two dice and roll six.");
+
+  // Orientation State: Works ONLY on horizontal (landscape) view!
+  const [isPortrait, setIsPortrait] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerHeight > window.innerWidth;
+  });
+
+  // Track screen orientation changes
+  useEffect(() => {
+    const handleOrientation = () => {
+      const portrait = window.innerHeight > window.innerWidth;
+      setIsPortrait(portrait);
+    };
+
+    handleOrientation();
+    window.addEventListener('resize', handleOrientation);
+    window.addEventListener('orientationchange', handleOrientation);
+
+    return () => {
+      window.removeEventListener('resize', handleOrientation);
+      window.removeEventListener('orientationchange', handleOrientation);
+    };
+  }, []);
 
   const getRandomQuote = (quotes: string[]) => quotes[Math.floor(Math.random() * quotes.length)];
 
@@ -63,61 +90,58 @@ export const LudoGame: React.FC<LudoGameProps> = ({ onExit }) => {
     setGameState(state);
 
     if (scene) {
-      const dice = state.diceValue;
+      const dice = state.diceValues;
       const movableTokens = dice ? engine.getMovableTokens(state.currentTurn, dice).map((t) => t.id) : [];
       scene.syncTokens(state.tokens, movableTokens);
     }
   }, []);
 
   // Handle Token Move Execution
-  const handleExecuteMove = useCallback(async (tokenId: string) => {
+  const handleExecuteMove = useCallback((tokenId: string) => {
     const engine = engineRef.current;
     const scene = sceneRef.current;
-    if (!scene) return;
+    if (!scene || engine.state.phase !== 'select_token') return;
 
     const color = engine.state.currentTurn;
     const token = engine.state.tokens[color].find((t) => t.id === tokenId);
     if (!token) return;
 
-    const startPos = getTokenWorldPosition(color, token.index, token.step);
+    const fromStep = token.step;
 
-    // Make move in engine
+    // Execute logic in engine
     const result = engine.moveToken(tokenId);
     if (!result.success) return;
 
     scene.isInteractive = false;
+    const toStep = token.step;
 
-    // 1. Animate token hop to new position
-    const endPos = getTokenWorldPosition(color, token.index, token.step);
-    await scene.animateTokenMove(tokenId, startPos, endPos);
+    // Animate token hop along track
+    scene.animatePawnMove(tokenId, fromStep, toStep, color, token.index, () => {
+      if (result.capturedToken) {
+        ludoSound.playKpafuka();
+        setCommentary(getRandomQuote(EMEKA_QUOTES.chop));
+      } else if (result.isHome) {
+        ludoSound.playEnterHome();
+        setCommentary(getRandomQuote(EMEKA_QUOTES.house));
+      }
 
-    // 2. Animate Chop if an opponent was captured
-    if (result.choppedToken) {
-      setCommentary(getRandomQuote(EMEKA_QUOTES.chop));
-      const opponentColor = result.choppedToken.color;
-      const yardTarget = getTokenWorldPosition(opponentColor, result.choppedToken.index, -1);
-      await scene.animateChop(result.choppedToken.id, yardTarget);
-    } else if (result.enteredHouse) {
-      ludoSound.playEnterHome();
-      setCommentary(getRandomQuote(EMEKA_QUOTES.house));
-    }
+      syncBoardState();
 
-    syncBoardState();
+      if (engine.state.winner) {
+        ludoSound.playVictory();
+        setShowWinModal(true);
+        setCommentary(getRandomQuote(EMEKA_QUOTES.win));
+        scene.isInteractive = true;
+        return;
+      }
 
-    if (result.isGameOver) {
-      ludoSound.playVictory();
-      setShowWinModal(true);
-      setCommentary(getRandomQuote(EMEKA_QUOTES.win));
       scene.isInteractive = true;
-      return;
-    }
 
-    scene.isInteractive = true;
-
-    // Check if AI turn next
-    if (gameMode === 'vs_ai' && engine.state.currentTurn === 'yellow') {
-      triggerAiTurn();
-    }
+      // Check if AI turn next
+      if (gameMode === 'vs_ai' && engine.state.currentTurn === 'yellow') {
+        triggerAiTurn();
+      }
+    });
   }, [gameMode, syncBoardState]);
 
   // AI Turn Logic (Bros Emeka)
@@ -128,68 +152,70 @@ export const LudoGame: React.FC<LudoGameProps> = ({ onExit }) => {
 
     setIsAiThinking(true);
     scene.isInteractive = false;
-    setCommentary("Bros Emeka is shaking the dice cup...");
+    setCommentary("Bros Emeka is shaking the two dice...");
 
-    setTimeout(async () => {
-      // 1. Roll Dice for AI
-      const rollRes = engine.rollDice();
-      await scene.animateDiceRoll(rollRes.value);
+    setTimeout(() => {
+      // 1. Roll Two Dice for AI
+      const rollRes = engine.rollTwoDice();
 
-      if (rollRes.value === 6) {
-        setCommentary(getRandomQuote(EMEKA_QUOTES.rollSix));
-      }
-
-      syncBoardState();
-
-      if (!rollRes.canAnyTokenMove) {
-        // No moves possible
-        scene.isInteractive = true;
-        setIsAiThinking(false);
-        // If rolled 6, AI rolls again
-        if (rollRes.extraTurn && engine.state.currentTurn === 'yellow') {
-          triggerAiTurn();
+      scene.rollTwoDice3D(rollRes.dice[0], rollRes.dice[1], () => {
+        if (rollRes.hasSix) {
+          setCommentary(getRandomQuote(EMEKA_QUOTES.rollSix));
         }
-        return;
-      }
 
-      // 2. AI chooses best token after brief hesitation
-      setTimeout(async () => {
-        const bestTokenId = engine.getBestAIMove();
-        if (bestTokenId) {
-          await handleExecuteMove(bestTokenId);
-        }
-        scene.isInteractive = true;
-        setIsAiThinking(false);
+        syncBoardState();
 
-        // If AI earned bonus roll (rolled 6 or chopped), trigger AI turn again!
-        if (engine.state.bonusRoll && engine.state.currentTurn === 'yellow' && !engine.state.winner) {
-          triggerAiTurn();
+        if (!rollRes.canAnyTokenMove) {
+          // No moves possible
+          scene.isInteractive = true;
+          setIsAiThinking(false);
+          // If doubles/bonus roll, roll again!
+          if (rollRes.extraTurn && engine.state.currentTurn === 'yellow') {
+            triggerAiTurn();
+          }
+          return;
         }
-      }, 700);
-    }, 600);
+
+        // 2. AI chooses best token after brief calculation
+        setTimeout(() => {
+          const bestTokenId = engine.getBestAIMove('yellow');
+          if (bestTokenId) {
+            handleExecuteMove(bestTokenId);
+          }
+          scene.isInteractive = true;
+          setIsAiThinking(false);
+
+          // If AI earned bonus roll (rolled double or chopped), trigger AI turn again!
+          if (engine.state.bonusRoll && engine.state.currentTurn === 'yellow' && !engine.state.winner) {
+            triggerAiTurn();
+          }
+        }, 650);
+      });
+    }, 550);
   }, [handleExecuteMove, syncBoardState]);
 
-  // Handle Player Clicking "ROLL DICE"
-  const handleRollDice = async () => {
+  // Handle Player Clicking "ROLL 2 DICE"
+  const handleRollDice = () => {
     const engine = engineRef.current;
     const scene = sceneRef.current;
     if (gameState.phase !== 'roll_dice' || isAiThinking || gameState.winner || !scene) return;
 
     scene.isInteractive = false;
-    const rollRes = engine.rollDice();
-    await scene.animateDiceRoll(rollRes.value);
+    const rollRes = engine.rollTwoDice();
 
-    if (rollRes.value === 6) {
-      setCommentary(getRandomQuote(EMEKA_QUOTES.rollSix));
-    }
+    scene.rollTwoDice3D(rollRes.dice[0], rollRes.dice[1], () => {
+      if (rollRes.hasSix) {
+        setCommentary(getRandomQuote(EMEKA_QUOTES.rollSix));
+      }
 
-    syncBoardState();
-    scene.isInteractive = true;
+      syncBoardState();
+      scene.isInteractive = true;
 
-    // If no moves possible and turn passed to AI
-    if (!rollRes.canAnyTokenMove && engine.state.currentTurn === 'yellow' && gameMode === 'vs_ai') {
-      triggerAiTurn();
-    }
+      // If no moves possible and turn passed to AI
+      if (!rollRes.canAnyTokenMove && engine.state.currentTurn === 'yellow' && gameMode === 'vs_ai') {
+        triggerAiTurn();
+      }
+    });
   };
 
   // Keyboard Spacebar to Roll Dice
@@ -204,23 +230,22 @@ export const LudoGame: React.FC<LudoGameProps> = ({ onExit }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState.phase, isAiThinking]);
 
-  // Initialize 3D Scene
+  // Initialize 3D Engine & Scene
   useEffect(() => {
     if (!containerRef.current) return;
 
     const scene = new LudoScene3D(containerRef.current);
     sceneRef.current = scene;
 
+    // Attach callbacks
     scene.onTokenSelect = (tokenId) => {
-      const engine = engineRef.current;
-      if (engine.state.phase === 'select_token' && !isAiThinking) {
-        if (gameMode === 'vs_ai' && engine.state.currentTurn !== 'red') return;
+      if (gameState.phase === 'select_token' && !isAiThinking) {
         handleExecuteMove(tokenId);
       }
     };
 
     scene.onDiceClick = () => {
-      if (engineRef.current.state.phase === 'roll_dice' && !isAiThinking) {
+      if (gameState.phase === 'roll_dice' && !isAiThinking) {
         handleRollDice();
       }
     };
@@ -228,18 +253,14 @@ export const LudoGame: React.FC<LudoGameProps> = ({ onExit }) => {
     syncBoardState();
 
     return () => {
-      scene.dispose();
-      sceneRef.current = null;
+      scene.destroy();
     };
-  }, [handleExecuteMove, isAiThinking, gameMode, syncBoardState]);
+  }, []);
 
-  // Restart match
-  const handleRestart = () => {
-    engineRef.current.reset();
-    setShowWinModal(false);
-    setIsAiThinking(false);
-    setCommentary("New match started! Red rolls first.");
-    syncBoardState();
+  const handleToggleCamera = () => {
+    const next = cameraMode === 'iso' ? 'top' : 'iso';
+    setCameraMode(next);
+    sceneRef.current?.setCameraMode(next);
   };
 
   const handleToggleMute = () => {
@@ -247,268 +268,334 @@ export const LudoGame: React.FC<LudoGameProps> = ({ onExit }) => {
     setIsMuted(muted);
   };
 
-  const redTokens = gameState.tokens.red;
-  const yellowTokens = gameState.tokens.yellow;
-  const redFinished = redTokens.filter((t) => t.isFinished).length;
-  const yellowFinished = yellowTokens.filter((t) => t.isFinished).length;
+  const handleResetMatch = () => {
+    engineRef.current.reset();
+    setShowWinModal(false);
+    setCommentary("New match! Red rolls first with two dice.");
+    syncBoardState();
+  };
+
+  const requestFullscreenLandscape = async () => {
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+      const scr = window.screen as any;
+      if (scr?.orientation?.lock) {
+        await scr.orientation.lock('landscape');
+      }
+    } catch (e) {
+      console.log('Orientation lock skipped:', e);
+    }
+  };
+
+  // Get finished token count
+  const getFinishedCount = (color: LudoColor) => {
+    return gameState.tokens[color].filter(t => t.isFinished).length;
+  };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-stone-950 font-sans select-none text-white">
-      {/* 3D WebGL Canvas Viewport */}
-      <div ref={containerRef} className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing" />
-
-      {/* TOP HEADER HUD */}
-      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-stone-950/90 via-stone-950/60 to-transparent pointer-events-none">
-        {/* Back to Hub Button */}
-        <div className="pointer-events-auto flex items-center gap-2">
-          <button
-            onClick={onExit}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-500/30 text-amber-300 font-bold text-xs tracking-wider uppercase transition-all shadow-lg active:scale-95"
-          >
-            <span>&larr;</span>
-            <span className="hidden sm:inline">ARCADE</span>
-            <span>HUB</span>
-          </button>
-          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-600/20 text-amber-300 text-xs font-semibold">
-            <span>🎲</span>
-            <span>NAIJA LUDO 3D</span>
+    <div className="relative w-full h-full overflow-hidden bg-zinc-950 select-none text-white font-sans">
+      {/* 1. MANDATORY HORIZONTAL VIEW (LANDSCAPE) GATE OVERLAY FOR MOBILE */}
+      {isPortrait && (
+        <div className="fixed inset-0 z-50 bg-gradient-to-b from-zinc-950 via-black to-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in">
+          {/* Street Badge */}
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-black uppercase mb-6 shadow-lg">
+            <span>🎲 NAIJA LUDO 3D</span>
           </div>
-        </div>
 
-        {/* Center Scoreboards & Finished Tokens */}
-        <div className="pointer-events-auto flex items-center gap-3 bg-stone-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-amber-500/30 shadow-2xl">
-          {/* Red Player (South) */}
-          <div className={`flex flex-col items-center px-2 sm:px-3 py-1 rounded-xl transition-all ${gameState.currentTurn === 'red' ? 'bg-red-500/20 ring-1 ring-red-400' : 'opacity-70'}`}>
-            <span className="text-[10px] tracking-widest uppercase font-extrabold text-red-400">
-              {gameMode === 'vs_ai' ? 'YOU (RED)' : 'PLAYER 1 (RED)'}
-            </span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl sm:text-2xl font-black text-red-300">{redFinished}</span>
-              <span className="text-[10px] text-stone-400 font-bold">/ 4 in House</span>
-            </div>
-            {/* Progress Dots */}
-            <div className="flex gap-1 mt-0.5">
-              {[0, 1, 2, 3].map((idx) => (
-                <div
-                  key={idx}
-                  className={`w-2 h-2 rounded-full ${idx < redFinished ? 'bg-red-500 shadow-sm shadow-red-500' : 'bg-stone-700'}`}
-                />
-              ))}
+          {/* Animated Rotating Smartphone */}
+          <div className="relative w-28 h-28 flex items-center justify-center mb-6">
+            <div className="w-24 h-24 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center shadow-2xl relative">
+              <div
+                className="transition-transform duration-700 ease-in-out"
+                style={{ animation: 'rotatePhone 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite' }}
+              >
+                <Smartphone className="w-12 h-12 text-amber-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.6)]" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-500 text-black flex items-center justify-center shadow-lg border-2 border-zinc-900">
+                <RotateCw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} />
+              </div>
             </div>
           </div>
 
-          {/* Turn Indicator */}
-          <div className="flex flex-col items-center">
-            <span className="text-[10px] font-black text-stone-500">VS</span>
-            <div className={`mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-              gameState.currentTurn === 'red'
-                ? 'bg-red-500 text-white animate-pulse'
-                : 'bg-yellow-400 text-stone-950 animate-pulse'
-            }`}>
-              {gameState.currentTurn === 'red'
-                ? (gameState.phase === 'roll_dice' ? 'Red Roll' : 'Red Move')
-                : (gameMode === 'vs_ai' ? 'Emeka...' : 'Yellow Turn')}
-            </div>
-          </div>
-
-          {/* Yellow Player (North) */}
-          <div className={`flex flex-col items-center px-2 sm:px-3 py-1 rounded-xl transition-all ${gameState.currentTurn === 'yellow' ? 'bg-yellow-500/20 ring-1 ring-yellow-400' : 'opacity-70'}`}>
-            <span className="text-[10px] tracking-widest uppercase font-extrabold text-yellow-400">
-              {gameMode === 'vs_ai' ? 'BROS EMEKA (AI)' : 'PLAYER 2 (YELLOW)'}
-            </span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl sm:text-2xl font-black text-yellow-300">{yellowFinished}</span>
-              <span className="text-[10px] text-stone-400 font-bold">/ 4 in House</span>
-            </div>
-            {/* Progress Dots */}
-            <div className="flex gap-1 mt-0.5">
-              {[0, 1, 2, 3].map((idx) => (
-                <div
-                  key={idx}
-                  className={`w-2 h-2 rounded-full ${idx < yellowFinished ? 'bg-yellow-400 shadow-sm shadow-yellow-400' : 'bg-stone-700'}`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Action Icons (Mute, Rules, Reset) */}
-        <div className="pointer-events-auto flex items-center gap-2">
-          <button
-            onClick={handleToggleMute}
-            aria-label="Toggle Mute"
-            className="w-9 h-9 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-md"
-          >
-            {isMuted ? '🔇' : '🔊'}
-          </button>
-          <button
-            onClick={() => setShowRules(true)}
-            aria-label="Rules Guide"
-            className="w-9 h-9 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-500/40 flex items-center justify-center text-sm font-black text-amber-400 hover:text-amber-200 transition-all active:scale-95 shadow-md"
-          >
-            ?
-          </button>
-          <button
-            onClick={handleRestart}
-            aria-label="Restart Match"
-            className="w-9 h-9 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-md"
-          >
-            ↺
-          </button>
-        </div>
-      </header>
-
-      {/* COMMENTARY BANNER */}
-      <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-10 w-[92%] max-w-xl pointer-events-none">
-        <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-stone-950/85 backdrop-blur-md border border-amber-500/30 shadow-2xl text-center">
-          <span className="text-lg">🎲</span>
-          <p className="flex-1 text-xs sm:text-sm font-semibold text-amber-200 italic truncate">
-            &ldquo;{commentary}&rdquo;
+          <h2 className="font-display text-2xl text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-400 mb-2">
+            HORIZONTAL VIEW REQUIRED
+          </h2>
+          <p className="text-xs text-zinc-300 max-w-xs mb-6 leading-relaxed">
+            Please rotate your mobile phone to <strong>Landscape mode</strong> to view the full 3D Nigeria Ludo board and roll the two dice!
           </p>
-        </div>
-      </div>
 
-      {/* BOTTOM CONTROLS DOCK */}
-      <footer className="absolute bottom-3 sm:bottom-4 left-0 right-0 z-20 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 pointer-events-none">
-        {/* Instructions / Status pill */}
-        <div className="pointer-events-auto flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900/90 backdrop-blur border border-amber-500/20 text-xs font-medium text-stone-300 shadow-lg">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>{gameState.lastAction}</span>
-        </div>
-
-        {/* Center: BIG TACTILE ROLL DICE BUTTON */}
-        <div className="pointer-events-auto flex items-center gap-3">
-          <button
-            onClick={handleRollDice}
-            disabled={gameState.phase !== 'roll_dice' || isAiThinking || gameState.winner !== null}
-            className={`px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center gap-2 transition-all shadow-xl active:scale-95 ${
-              gameState.phase === 'roll_dice' && !isAiThinking
-                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 hover:brightness-110 shadow-amber-500/30 animate-pulse'
-                : 'bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed opacity-60'
-            }`}
-          >
-            <span className="text-xl">🎲</span>
-            <span>ROLL DICE {gameState.phase === 'roll_dice' && !isAiThinking ? '(SPACE)' : ''}</span>
-          </button>
-
-          {/* Dice Pip Preview */}
-          {gameState.diceValue && (
-            <div className="w-11 h-11 rounded-xl bg-stone-900 border border-amber-400/60 flex items-center justify-center font-display font-black text-xl text-amber-300 shadow-lg">
-              {gameState.diceValue}
-            </div>
-          )}
-        </div>
-
-        {/* Mode Selector Switcher */}
-        <div className="pointer-events-auto flex items-center gap-2 bg-stone-950/90 backdrop-blur-md p-1.5 rounded-2xl border border-stone-800 shadow-2xl">
-          <div className="flex bg-stone-900 p-0.5 rounded-xl border border-stone-800">
+          <div className="flex flex-col space-y-2.5 w-full max-w-xs">
             <button
-              onClick={() => { setGameMode('vs_ai'); handleRestart(); }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                gameMode === 'vs_ai'
-                  ? 'bg-amber-500 text-stone-950 shadow-md'
-                  : 'text-stone-400 hover:text-stone-200'
-              }`}
+              onClick={requestFullscreenLandscape}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-black font-black text-xs uppercase tracking-wider shadow-lg active:scale-95"
             >
-              vs AI
+              ROTATE / FULLSCREEN
             </button>
             <button
-              onClick={() => { setGameMode('local_2p'); handleRestart(); }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                gameMode === 'local_2p'
-                  ? 'bg-amber-500 text-stone-950 shadow-md'
-                  : 'text-stone-400 hover:text-stone-200'
-              }`}
+              onClick={onExit}
+              className="w-full py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 font-bold text-xs uppercase tracking-wider hover:text-white"
             >
-              2P Local
-            </button>
-          </div>
-        </div>
-      </footer>
-
-      {/* RULES MODAL */}
-      {showRules && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-stone-900 border border-amber-500/40 rounded-3xl p-6 shadow-2xl text-stone-200">
-            <button
-              onClick={() => setShowRules(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center text-sm"
-            >
-              &times;
-            </button>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">🎲</span>
-              <div>
-                <h2 className="text-xl font-black text-amber-400">NAIJA LUDO 3D RULES</h2>
-                <p className="text-xs text-stone-400">Authentic Nigerian Street Board Game Rules</p>
-              </div>
-            </div>
-
-            <div className="space-y-3.5 text-xs leading-relaxed text-stone-300">
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-0.5">1. Opening from Yard (Six!)</span>
-                A token can only leave your corner yard and step onto your starting square when you roll a <strong>6</strong>! Rolling a 6 also gives you a <strong>bonus roll</strong>!
-              </div>
-
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-0.5">2. KPAFUKA! (Capturing / Chopping)</span>
-                If your token lands on an opponent&apos;s token on any regular track tile, the opponent is <strong>CHOPPED</strong> and sent straight back to their yard! Chopping earns you a <strong>bonus roll</strong>!
-              </div>
-
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-0.5">3. Safe Star Squares</span>
-                Tokens standing on the <strong>Globe / Star tiles</strong> and starting arrow tiles are safe and cannot be chopped!
-              </div>
-
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-0.5">4. Three 6s Penalty</span>
-                Rolling three 6s in a row triggers the classic street penalty: the bonus is forfeited and turn passes!
-              </div>
-
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-0.5">5. Reaching House & Winning</span>
-                Tokens travel full circle around the track, climb their home column, and enter the center <strong>House</strong>. First player to bring all 4 tokens to House wins the crown!
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowRules(false)}
-              className="mt-6 w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 font-black text-sm uppercase tracking-wider hover:brightness-110 active:scale-98 shadow-lg shadow-amber-500/30"
-            >
-              I Understand &mdash; Let&apos;s Roll!
+              Back to Arcade Hub
             </button>
           </div>
         </div>
       )}
 
-      {/* VICTORY MODAL */}
+      {/* 2. 3D WebGL Canvas Viewport */}
+      <div ref={containerRef} className="absolute inset-0 w-full h-full cursor-pointer" />
+
+      {/* 3. MOBILE LANDSCAPE TOP HEADER (Ultra-compact) */}
+      <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/85 via-black/45 to-transparent pointer-events-auto">
+        {/* Left: Hub back & Game Title */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={onExit}
+            className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 text-zinc-300 text-xs font-bold shadow-md active:scale-95"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Hub</span>
+          </button>
+
+          <div className="flex items-center space-x-1.5">
+            <span className="text-base">🎲</span>
+            <span className="font-display text-xs sm:text-sm tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-amber-300 to-yellow-400">
+              NAIJA LUDO 3D
+            </span>
+          </div>
+        </div>
+
+        {/* Center: Turn Status Pill */}
+        <div className="flex items-center space-x-2">
+          <div className={`px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border shadow-md flex items-center space-x-1.5 ${
+            gameState.currentTurn === 'red'
+              ? 'bg-red-500/20 border-red-500 text-red-400'
+              : 'bg-yellow-500/20 border-yellow-500 text-yellow-400'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${gameState.currentTurn === 'red' ? 'bg-red-500 animate-ping' : 'bg-yellow-500 animate-ping'}`} />
+            <span>
+              {gameState.currentTurn === 'red' 
+                ? 'YOUR TURN (RED)' 
+                : (gameMode === 'vs_ai' ? 'BROS EMEKA (YELLOW)' : 'PLAYER 2 (YELLOW)')}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Camera, Audio, Rules */}
+        <div className="flex items-center space-x-1.5">
+          <button
+            onClick={handleToggleCamera}
+            className="px-2 py-1 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-[11px] font-bold shadow-md flex items-center space-x-1 active:scale-95"
+          >
+            <Eye className="w-3 h-3 text-amber-400" />
+            <span className="hidden sm:inline">{cameraMode === 'iso' ? '3D' : '2D'}</span>
+          </button>
+
+          <button
+            onClick={handleToggleMute}
+            className="p-1.5 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 text-zinc-300 shadow-md active:scale-95"
+          >
+            {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+          </button>
+
+          <button
+            onClick={() => setShowRules(true)}
+            className="p-1.5 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 text-zinc-300 shadow-md active:scale-95"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+          </button>
+        </div>
+      </div>
+
+      {/* 4. LEFT THUMB FLANK: Players Status & TWO DICE CARD */}
+      <div className="absolute left-2.5 top-12 bottom-3 z-10 flex flex-col justify-between pointer-events-auto w-36 sm:w-44">
+        {/* Player Scorecards */}
+        <div className="flex flex-col space-y-1.5">
+          {/* Player 1 (Red) */}
+          <div className={`p-2 rounded-xl border backdrop-blur-md transition-all shadow-lg ${
+            gameState.currentTurn === 'red' 
+              ? 'bg-red-950/80 border-red-500 scale-102 shadow-red-500/20' 
+              : 'bg-zinc-900/70 border-white/10 opacity-75'
+          }`}>
+            <div className="flex justify-between items-center text-[10px] font-black uppercase text-red-400">
+              <span>PLAYER 1</span>
+              <span>{getFinishedCount('red')}/4 HOME</span>
+            </div>
+            {/* Progress pips */}
+            <div className="flex space-x-1 mt-1">
+              {gameState.tokens.red.map((t, idx) => (
+                <div
+                  key={idx}
+                  className={`flex-1 h-1.5 rounded-full ${t.isFinished ? 'bg-red-500 shadow-sm' : t.step >= 0 ? 'bg-amber-400' : 'bg-zinc-700'}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Player 2 (Yellow) */}
+          <div className={`p-2 rounded-xl border backdrop-blur-md transition-all shadow-lg ${
+            gameState.currentTurn === 'yellow' 
+              ? 'bg-amber-950/80 border-yellow-500 scale-102 shadow-yellow-500/20' 
+              : 'bg-zinc-900/70 border-white/10 opacity-75'
+          }`}>
+            <div className="flex justify-between items-center text-[10px] font-black uppercase text-yellow-400">
+              <span>{gameMode === 'vs_ai' ? 'BROS EMEKA' : 'PLAYER 2'}</span>
+              <span>{getFinishedCount('yellow')}/4 HOME</span>
+            </div>
+            {/* Progress pips */}
+            <div className="flex space-x-1 mt-1">
+              {gameState.tokens.yellow.map((t, idx) => (
+                <div
+                  key={idx}
+                  className={`flex-1 h-1.5 rounded-full ${t.isFinished ? 'bg-yellow-400 shadow-sm' : t.step >= 0 ? 'bg-amber-400' : 'bg-zinc-700'}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* TWO DICE OUTCOME CARD */}
+        <div className="p-2.5 rounded-2xl bg-zinc-900/90 border border-white/15 backdrop-blur-md shadow-2xl flex flex-col items-center">
+          <div className="text-[9px] uppercase tracking-widest text-zinc-400 font-bold mb-1">TWO 3D DICE</div>
+          
+          <div className="flex items-center space-x-2 mb-1">
+            {/* Die 1 Pip */}
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-100 to-zinc-300 text-zinc-950 font-black text-lg flex items-center justify-center shadow-lg border border-white/60">
+              {gameState.diceValues ? gameState.diceValues[0] : '-'}
+            </div>
+            <span className="text-xs font-bold text-zinc-500">+</span>
+            {/* Die 2 Pip */}
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-100 to-zinc-300 text-zinc-950 font-black text-lg flex items-center justify-center shadow-lg border border-white/60">
+              {gameState.diceValues ? gameState.diceValues[1] : '-'}
+            </div>
+          </div>
+
+          <div className="text-xs font-black text-amber-400">
+            {gameState.diceSum ? `TOTAL: ${gameState.diceSum} STEPS` : 'READY TO ROLL'}
+          </div>
+
+          {gameState.isDoubles && (
+            <div className="mt-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-[9px] font-black uppercase animate-pulse">
+              DOUBLE BONUS ROLL!
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 5. TOP COMMENTARY BANNER */}
+      <div className="absolute top-11 inset-x-0 z-10 flex justify-center pointer-events-none px-4">
+        <div className="px-3.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-xs text-zinc-200 font-semibold shadow-lg text-center max-w-sm truncate">
+          {commentary}
+        </div>
+      </div>
+
+      {/* 6. RIGHT THUMB FLANK: "ROLL 2 DICE" & PAWN SELECTOR (Ergonomic for right thumb) */}
+      <div className="absolute right-2.5 bottom-3 z-20 flex flex-col items-end pointer-events-auto space-y-2">
+        {/* Token Choice Buttons when multiple tokens can move */}
+        {gameState.phase === 'select_token' && gameState.currentTurn === 'red' && (
+          <div className="flex flex-col space-y-1.5 bg-zinc-900/95 backdrop-blur-md p-2 rounded-2xl border border-amber-500/40 shadow-2xl max-w-[170px]">
+            <div className="text-[10px] font-bold text-amber-400 text-center uppercase">SELECT PAWN TO MOVE</div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {gameState.tokens.red.map((t, i) => {
+                const canMove = engineRef.current.getMovableTokens('red', gameState.diceValues || [0, 0]).some(m => m.id === t.id);
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => handleExecuteMove(t.id)}
+                    disabled={!canMove}
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-black uppercase transition-all shadow ${
+                      canMove
+                        ? 'bg-amber-500 hover:bg-amber-400 text-black active:scale-95 animate-pulse'
+                        : 'bg-zinc-800 text-zinc-600 cursor-not-allowed opacity-40'
+                    }`}
+                  >
+                    {t.step === -1 ? `P${i+1} OPEN` : `P${i+1} RUN`}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* BIG ERGONOMIC "ROLL 2 DICE" BUTTON */}
+        <button
+          onClick={handleRollDice}
+          disabled={gameState.phase !== 'roll_dice' || isAiThinking || gameState.currentTurn !== 'red'}
+          className={`w-36 sm:w-44 py-3.5 px-4 rounded-2xl font-display text-xs sm:text-sm tracking-wider flex items-center justify-center space-x-2 shadow-2xl transition-all active:scale-95 ${
+            gameState.phase === 'roll_dice' && gameState.currentTurn === 'red' && !isAiThinking
+              ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 hover:from-emerald-400 text-zinc-950 font-black shadow-emerald-500/40 animate-bounce'
+              : 'bg-zinc-800/80 text-zinc-500 border border-white/5 cursor-not-allowed'
+          }`}
+        >
+          <Zap className="w-4 h-4 fill-current" />
+          <span>{isAiThinking ? 'AI ROLLING...' : gameState.phase === 'select_token' ? 'SELECT PAWN' : 'ROLL 2 DICE'}</span>
+        </button>
+      </div>
+
+      {/* 7. RULES MODAL */}
+      {showRules && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md bg-zinc-900 border border-white/15 rounded-3xl p-5 shadow-2xl text-left space-y-3">
+            <div className="flex justify-between items-center border-b border-white/10 pb-2">
+              <h3 className="font-display text-base text-amber-400 flex items-center space-x-2">
+                <span>🎲</span>
+                <span>NAIJA LUDO 2-DICE RULES</span>
+              </h3>
+              <button onClick={() => setShowRules(false)} className="text-zinc-400 hover:text-white p-1">✕</button>
+            </div>
+
+            <div className="text-[11px] text-zinc-300 space-y-2 max-h-[50vh] overflow-y-auto pr-1 leading-relaxed">
+              <p className="font-semibold text-emerald-400">1. Two Dice Rolling & 6-to-Open:</p>
+              <p>You roll two dice every turn! Rolling a <strong>6 on either die</strong> opens your pawn from the yard onto the track. The second die value can advance that pawn immediately!</p>
+
+              <p className="font-semibold text-emerald-400">2. Doubles Bonus Roll:</p>
+              <p>Rolling doubles (e.g. [5, 5] or [6, 6]) grants an <strong>immediate extra bonus roll</strong>! Rolling three doubles in a row triggers a forfeit penalty.</p>
+
+              <p className="font-semibold text-emerald-400">3. Kpafuka Chop Capture:</p>
+              <p>Landing on an opponent pawn on normal tiles chops them back to their yard and grants a bonus roll!</p>
+
+              <p className="font-semibold text-emerald-400">4. Safe Star Tiles:</p>
+              <p>Pawns resting on the Star tiles are completely protected and cannot be chopped.</p>
+            </div>
+
+            <button
+              onClick={() => setShowRules(false)}
+              className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider"
+            >
+              GOT IT, OYA PLAY!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 8. VICTORY WIN MODAL */}
       {showWinModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md bg-stone-900 border-2 border-amber-500 rounded-3xl p-6 text-center shadow-2xl">
-            <span className="text-5xl block mb-2">👑</span>
-            <h2 className="text-2xl font-black text-amber-400 mb-1">
-              {gameState.winner === 'red'
-                ? (gameMode === 'vs_ai' ? 'YOU ARE THE LUDO KING!' : 'PLAYER 1 (RED) WINS!')
-                : (gameMode === 'vs_ai' ? 'BROS EMEKA WINS!' : 'PLAYER 2 (YELLOW) WINS!')}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in zoom-in-95">
+          <div className="w-full max-w-sm bg-zinc-900 border border-amber-500/50 rounded-3xl p-6 text-center shadow-2xl space-y-4">
+            <Trophy className="w-16 h-16 text-amber-400 mx-auto animate-bounce" />
+            <h2 className="font-display text-2xl text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500">
+              {gameState.winner === 'red' ? 'YOU WIN THE MATCH!' : 'BROS EMEKA WINS!'}
             </h2>
-            <p className="text-xs text-stone-300 mb-6">
-              {gameState.winner === 'red'
-                ? getRandomQuote(EMEKA_QUOTES.win)
-                : getRandomQuote(EMEKA_QUOTES.loss)}
+            <p className="text-xs font-bold text-zinc-200">
+              {gameState.winner === 'red' 
+                ? 'All 4 tokens safely entered the house! Undisputed Street Ludo Champion!' 
+                : 'Bros Emeka completed all 4 tokens first! Practice more and rematch!'}
             </p>
 
-            <div className="flex gap-3">
+            <div className="flex space-x-2 pt-2">
               <button
-                onClick={handleRestart}
-                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-98 shadow-lg shadow-amber-500/30"
+                onClick={handleResetMatch}
+                className="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center space-x-1"
               >
-                Play Rematch
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>REMATCH</span>
               </button>
               <button
                 onClick={onExit}
-                className="flex-1 py-3 rounded-2xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold text-xs uppercase tracking-wider transition-all border border-stone-700"
+                className="flex-1 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-wider"
               >
-                Arcade Hub
+                EXIT HUB
               </button>
             </div>
           </div>
@@ -517,5 +604,3 @@ export const LudoGame: React.FC<LudoGameProps> = ({ onExit }) => {
     </div>
   );
 };
-
-export default LudoGame;

@@ -11,11 +11,12 @@ export interface WorldPos {
   z: number;
 }
 
-// Exact tile size matching the 8.2 unit span of Nigeria_Ludo.glb
-const TILE_SIZE = 0.5857;
+// Exact tile size matching the 16.0 unit span of Nigeria_Ludo_Two_Dice.glb
+// 6 tiles from center to yard edge = 5.0 units -> 5.0 / 6 = 0.8333
+const TILE_SIZE = 5.0 / 6;
 
 // Convert 15x15 grid coordinates to 3D world space
-export function gridToWorld(col: number, row: number, y = 0.19): WorldPos {
+export function gridToWorld(col: number, row: number, y = 0.28): WorldPos {
   return {
     x: (col - 7) * TILE_SIZE,
     y,
@@ -98,13 +99,13 @@ export const SAFE_CIRCUIT_TILES = [0, 8, 13, 21, 26, 34, 39, 47];
 // Home Column 5 tiles (step 51..55) + Center House (step 56..57)
 export const HOME_COLUMN_COORDS: Record<LudoColor, GridPos[]> = {
   red: [
-    { col: 1, row: 7 }, // 51
-    { col: 2, row: 7 }, // 52
-    { col: 3, row: 7 }, // 53
-    { col: 4, row: 7 }, // 54
-    { col: 5, row: 7 }, // 55
-    { col: 6, row: 7 }, // 56
-    { col: 7, row: 7 }  // 57: House Center
+    { col: 1, row: 7 },
+    { col: 2, row: 7 },
+    { col: 3, row: 7 },
+    { col: 4, row: 7 },
+    { col: 5, row: 7 },
+    { col: 6, row: 7 },
+    { col: 7, row: 7 }
   ],
   yellow: [
     { col: 13, row: 7 },
@@ -135,31 +136,31 @@ export const HOME_COLUMN_COORDS: Record<LudoColor, GridPos[]> = {
   ]
 };
 
-// Exact Yard Spawn Positions matching Nigeria_Ludo.glb
+// Exact Yard Spawn Positions matching Nigeria_Ludo_Two_Dice.glb pedestals
 export const EXACT_YARD_WORLD_POS: Record<LudoColor, WorldPos[]> = {
   red: [
-    { x: -3.60, y: 0.19, z: -3.60 },
-    { x: -2.80, y: 0.19, z: -3.60 },
-    { x: -3.60, y: 0.19, z: -2.80 },
-    { x: -2.80, y: 0.19, z: -2.80 }
+    { x: -5.65, y: 0.28, z: -5.65 },
+    { x: -4.35, y: 0.28, z: -5.65 },
+    { x: -5.65, y: 0.28, z: -4.35 },
+    { x: -4.35, y: 0.28, z: -4.35 }
   ],
   yellow: [
-    { x: 2.80, y: 0.19, z: 2.80 },
-    { x: 3.60, y: 0.19, z: 2.80 },
-    { x: 2.80, y: 0.19, z: 3.60 },
-    { x: 3.60, y: 0.19, z: 3.60 }
+    { x: 4.35, y: 0.28, z: 4.35 },
+    { x: 5.65, y: 0.28, z: 4.35 },
+    { x: 4.35, y: 0.28, z: 5.65 },
+    { x: 5.65, y: 0.28, z: 5.65 }
   ],
   green: [
-    { x: -3.60, y: 0.19, z: 2.80 },
-    { x: -2.80, y: 0.19, z: 2.80 },
-    { x: -3.60, y: 0.19, z: 3.60 },
-    { x: -2.80, y: 0.19, z: 3.60 }
+    { x: 4.35, y: 0.28, z: -5.65 },
+    { x: 5.65, y: 0.28, z: -5.65 },
+    { x: 4.35, y: 0.28, z: -4.35 },
+    { x: 5.65, y: 0.28, z: -4.35 }
   ],
   blue: [
-    { x: 2.80, y: 0.19, z: -3.60 },
-    { x: 3.60, y: 0.19, z: -3.60 },
-    { x: 2.80, y: 0.19, z: -2.80 },
-    { x: 3.60, y: 0.19, z: -2.80 }
+    { x: -5.65, y: 0.28, z: 4.35 },
+    { x: -4.35, y: 0.28, z: 4.35 },
+    { x: -5.65, y: 0.28, z: 5.65 },
+    { x: -4.35, y: 0.28, z: 5.65 }
   ]
 };
 
@@ -177,11 +178,11 @@ export function getTokenWorldPosition(color: LudoColor, tokenIndex: number, step
     const circuitOffset = COLOR_CIRCUIT_OFFSET[color];
     const globalTileIndex = (step + circuitOffset) % 52;
     const grid = CIRCUIT_GRID_COORDS[globalTileIndex];
-    return gridToWorld(grid.col, grid.row, 0.19);
+    return gridToWorld(grid.col, grid.row, 0.28);
   }
 
   // 3. In Home Stretch / House (steps 51 to 57)
   const homeIndex = Math.min(6, step - 51);
   const homeGrid = HOME_COLUMN_COORDS[color][homeIndex];
-  return gridToWorld(homeGrid.col, homeGrid.row, step === 57 ? 0.32 : 0.19);
+  return gridToWorld(homeGrid.col, homeGrid.row, step === 57 ? 0.45 : 0.28);
 }
