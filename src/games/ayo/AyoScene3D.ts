@@ -38,6 +38,7 @@ export class AyoScene3D {
 
   // Animation Queue
   private isAnimating = false;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -45,18 +46,28 @@ export class AyoScene3D {
     this.boardGroup = new THREE.Group();
     this.scene.add(this.boardGroup);
 
-    // Setup Camera (Overhead Angled View)
-    const aspect = container.clientWidth / container.clientHeight;
-    this.camera = new THREE.PerspectiveCamera(42, aspect, 0.1, 100);
+    // Setup Camera (Overhead Angled View) with safe dimension fallbacks
+    const width = container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 800) || 800;
+    const height = container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600) || 600;
+    const aspect = (width > 0 && height > 0) ? width / height : (16 / 9);
+
+    this.camera = new THREE.PerspectiveCamera(42, Number.isFinite(aspect) && aspect > 0 ? aspect : 16 / 9, 0.1, 100);
     this.camera.position.set(0, 10.5, 9.2);
     this.camera.lookAt(0, -0.2, 0.2);
 
     // WebGL Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    this.renderer.setSize(width, height);
+    this.renderer.setPixelRatio(Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
+    this.renderer.domElement.style.display = 'block';
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
     container.appendChild(this.renderer.domElement);
 
     // Environment & Lighting
@@ -69,8 +80,18 @@ export class AyoScene3D {
     // Build 3D Carved Wooden Board & Pits
     this.createCarvedAyoBoard();
 
-    // Event Listeners
+    // Event Listeners & Resize Observers
     this.bindEvents();
+
+    if (typeof ResizeObserver !== 'undefined' && this.container) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.onResize();
+      });
+      this.resizeObserver.observe(this.container);
+    }
+
+    // Initial resize pass on next microtask to sync with rendered DOM layout
+    setTimeout(this.onResize, 0);
 
     // Render loop
     this.animate();
@@ -589,16 +610,26 @@ export class AyoScene3D {
       }
     });
 
-    // Window Resize
-    window.addEventListener('resize', () => {
-      if (!this.container) return;
-      const width = this.container.clientWidth;
-      const height = this.container.clientHeight;
-      this.camera.aspect = width / height;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(width, height);
-    });
+    // Window & Orientation Resize Listeners
+    window.addEventListener('resize', this.onResize);
+    window.addEventListener('orientationchange', this.onResize);
   }
+
+  public resize = () => {
+    this.onResize();
+  };
+
+  private onResize = () => {
+    if (!this.container || !this.renderer || !this.camera) return;
+    const width = this.container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 0);
+    const height = this.container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 0);
+    if (width <= 0 || height <= 0 || !Number.isFinite(width) || !Number.isFinite(height)) return;
+    const aspect = width / height;
+    if (!Number.isFinite(aspect) || aspect <= 0) return;
+    this.camera.aspect = aspect;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height);
+  };
 
   private checkHover() {
     this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -630,6 +661,12 @@ export class AyoScene3D {
     if (this.animFrameId) {
       cancelAnimationFrame(this.animFrameId);
     }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+    window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('orientationchange', this.onResize);
     this.renderer.dispose();
     if (this.renderer.domElement && this.renderer.domElement.parentElement) {
       this.renderer.domElement.parentElement.removeChild(this.renderer.domElement);

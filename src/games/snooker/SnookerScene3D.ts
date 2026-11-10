@@ -30,6 +30,7 @@ export class SnookerScene3D {
   // Animation Loop
   private animFrameId: number | null = null;
   private isAiming = false;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -39,20 +40,30 @@ export class SnookerScene3D {
     this.scene.background = new THREE.Color(0x0a0c10); // Luxurious snooker lounge ambient
     this.scene.fog = new THREE.FogExp2(0x0a0c10, 0.025);
 
-    // 2. Camera
-    const aspect = container.clientWidth / (container.clientHeight || 1);
-    this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
+    // 2. Camera with safe dimension fallbacks
+    const width = container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 800) || 800;
+    const height = container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600) || 600;
+    const aspect = (width > 0 && height > 0) ? width / height : 16 / 9;
+
+    this.camera = new THREE.PerspectiveCamera(45, Number.isFinite(aspect) && aspect > 0 ? aspect : 16 / 9, 0.1, 100);
     this.camera.position.set(0, 10, 14);
     this.camera.lookAt(0, 0, 0);
 
     // 3. Renderer with PBR shadows & tone mapping
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    this.renderer.setSize(width, height);
+    this.renderer.setPixelRatio(Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
+
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
+    this.renderer.domElement.style.display = 'block';
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
     container.appendChild(this.renderer.domElement);
 
     // 4. Lighting Setup (Overhead Warm Pool Hall Canopies)
@@ -67,8 +78,18 @@ export class SnookerScene3D {
     this.buildTable();
     this.buildCueAndGuide();
 
-    // 6. Handle Window Resizing
+    // 6. Handle Window Resizing & ResizeObserver
     window.addEventListener('resize', this.onResize);
+    window.addEventListener('orientationchange', this.onResize);
+
+    if (typeof ResizeObserver !== 'undefined' && this.container) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.onResize();
+      });
+      this.resizeObserver.observe(this.container);
+    }
+
+    setTimeout(this.onResize, 0);
 
     // 7. Start Render Loop
     this.renderLoop();
@@ -456,18 +477,30 @@ export class SnookerScene3D {
     this.renderer.render(this.scene, this.camera);
   };
 
+  public resize = () => {
+    this.onResize();
+  };
+
   private onResize = () => {
-    if (!this.container) return;
-    const w = this.container.clientWidth || 1;
-    const h = this.container.clientHeight || 1;
-    this.camera.aspect = w / h;
+    if (!this.container || !this.renderer || !this.camera) return;
+    const w = this.container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 0);
+    const h = this.container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 0);
+    if (w <= 0 || h <= 0 || !Number.isFinite(w) || !Number.isFinite(h)) return;
+    const aspect = w / h;
+    if (!Number.isFinite(aspect) || aspect <= 0) return;
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
   };
 
   public destroy() {
     if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('orientationchange', this.onResize);
     this.renderer.dispose();
     if (this.renderer.domElement.parentElement) {
       this.renderer.domElement.parentElement.removeChild(this.renderer.domElement);

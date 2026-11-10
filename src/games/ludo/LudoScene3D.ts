@@ -36,6 +36,7 @@ export class LudoScene3D {
   // Cached state for syncing once model finishes loading
   private pendingTokensState: Record<LudoColor, TokenState[]> | null = null;
   private pendingMovableIds: string[] = [];
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -43,24 +44,44 @@ export class LudoScene3D {
     this.boardGroup = new THREE.Group();
     this.scene.add(this.boardGroup);
 
-    // Camera setup tuned for mobile landscape horizontal view
-    const aspect = container.clientWidth / (container.clientHeight || 1);
-    this.camera = new THREE.PerspectiveCamera(46, aspect, 0.1, 100);
+    // Camera setup tuned for mobile landscape horizontal view with safe fallbacks
+    const width = container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 800) || 800;
+    const height = container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600) || 600;
+    const aspect = (width > 0 && height > 0) ? width / height : 16 / 9;
+
+    this.camera = new THREE.PerspectiveCamera(46, Number.isFinite(aspect) && aspect > 0 ? aspect : 16 / 9, 0.1, 100);
     this.updateCameraTarget();
     this.camera.position.copy(this.targetCamPos);
     this.camera.lookAt(this.targetCamLook);
 
     // Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    this.renderer.setSize(width, height);
+    this.renderer.setPixelRatio(Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
+    this.renderer.domElement.style.display = 'block';
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '0';
     container.appendChild(this.renderer.domElement);
 
     this.setupLighting();
     this.loadCustomNigeriaLudoModel();
     this.bindEvents();
+
+    if (typeof ResizeObserver !== 'undefined' && this.container) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.onResize();
+      });
+      this.resizeObserver.observe(this.container);
+    }
+
+    setTimeout(this.onResize, 0);
+
     this.animate();
   }
 
@@ -569,11 +590,17 @@ export class LudoScene3D {
     }
   };
 
+  public resize = () => {
+    this.onResize();
+  };
+
   private onResize = () => {
-    if (!this.container) return;
-    const w = this.container.clientWidth || 1;
-    const h = this.container.clientHeight || 1;
+    if (!this.container || !this.renderer || !this.camera) return;
+    const w = this.container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 0);
+    const h = this.container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 0);
+    if (w <= 0 || h <= 0 || !Number.isFinite(w) || !Number.isFinite(h)) return;
     const aspect = w / h;
+    if (!Number.isFinite(aspect) || aspect <= 0) return;
 
     this.camera.aspect = aspect;
     // Responsive dynamic FOV for horizontal phone view
@@ -611,7 +638,12 @@ export class LudoScene3D {
 
   public destroy() {
     if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('orientationchange', this.onResize);
     const dom = this.renderer.domElement;
     dom.removeEventListener('pointerdown', this.onPointerDown);
     this.renderer.dispose();

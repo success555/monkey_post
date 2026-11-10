@@ -99,8 +99,19 @@ export const SnookerGame: React.FC<SnookerGameProps> = ({ onExit }) => {
 
     animId = requestAnimationFrame(loop);
 
+    const doResize = () => scene.resize();
+    doResize();
+    const raf = requestAnimationFrame(doResize);
+    const t1 = setTimeout(doResize, 60);
+    const t2 = setTimeout(doResize, 180);
+    const t3 = setTimeout(doResize, 400);
+
     return () => {
       cancelAnimationFrame(animId);
+      cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       scene.destroy();
     };
   }, []);
@@ -216,7 +227,8 @@ export const SnookerGame: React.FC<SnookerGameProps> = ({ onExit }) => {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
+        className="absolute inset-0 w-full h-full overflow-hidden cursor-grab active:cursor-grabbing z-0"
+        style={{ width: '100%', height: '100%' }}
       />
 
       {/* TOP HEADER NAVIGATION */}

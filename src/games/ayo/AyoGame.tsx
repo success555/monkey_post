@@ -134,22 +134,39 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
     }
   }, [gameMode, difficulty, isThinking]);
 
-  // Initialize 3D Scene
+  const handlePitClickRef = useRef(handlePitClick);
+  handlePitClickRef.current = handlePitClick;
+
+  // Initialize 3D Scene once on mount
   useEffect(() => {
     if (!containerRef.current) return;
 
     const scene = new AyoScene3D(containerRef.current);
     scene.onPitSelect = (pitIndex: number) => {
-      handlePitClick(pitIndex);
+      handlePitClickRef.current(pitIndex);
     };
     scene.updateBoardState(engineRef.current.state);
     sceneRef.current = scene;
 
+    // Dispatches immediate & staggered resize passes to ensure canvas renders with correct dimensions
+    const doResize = () => {
+      scene.resize();
+    };
+    doResize();
+    const raf = requestAnimationFrame(doResize);
+    const t1 = setTimeout(doResize, 60);
+    const t2 = setTimeout(doResize, 180);
+    const t3 = setTimeout(doResize, 400);
+
     return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       scene.dispose();
       sceneRef.current = null;
     };
-  }, [handlePitClick]);
+  }, []);
 
   // Restart match
   const handleRestart = () => {
@@ -175,9 +192,13 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
   const p2Score = gameState.captured[2];
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-stone-950 font-sans select-none text-white">
+    <div className="relative w-full h-full min-h-screen overflow-hidden bg-stone-950 font-sans select-none text-white">
       {/* 3D WebGL Canvas Viewport */}
-      <div ref={containerRef} className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing" />
+      <div
+        ref={containerRef}
+        className="absolute inset-0 w-full h-full overflow-hidden cursor-grab active:cursor-grabbing z-0"
+        style={{ width: '100%', height: '100%' }}
+      />
 
       {/* TOP HEADER HUD */}
       <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-stone-950/90 via-stone-950/60 to-transparent pointer-events-none">

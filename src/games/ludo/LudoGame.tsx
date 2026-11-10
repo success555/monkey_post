@@ -252,7 +252,18 @@ export const LudoGame: React.FC<LudoGameProps> = ({ onExit }) => {
 
     syncBoardState();
 
+    const doResize = () => scene.resize();
+    doResize();
+    const raf = requestAnimationFrame(doResize);
+    const t1 = setTimeout(doResize, 60);
+    const t2 = setTimeout(doResize, 180);
+    const t3 = setTimeout(doResize, 400);
+
     return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       scene.destroy();
     };
   }, []);
@@ -344,7 +355,11 @@ export const LudoGame: React.FC<LudoGameProps> = ({ onExit }) => {
       )}
 
       {/* 2. 3D WebGL Canvas Viewport */}
-      <div ref={containerRef} className="absolute inset-0 w-full h-full cursor-pointer" />
+      <div
+        ref={containerRef}
+        className="absolute inset-0 w-full h-full overflow-hidden cursor-pointer z-0"
+        style={{ width: '100%', height: '100%' }}
+      />
 
       {/* 3. MOBILE LANDSCAPE TOP HEADER (Ultra-compact) */}
       <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/85 via-black/45 to-transparent pointer-events-auto">
