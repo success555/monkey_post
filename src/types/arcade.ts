@@ -20,3 +20,4 @@ export interface ArcadeGame {
   controlsSummary: string;
   actionLabel: string;
 }
+

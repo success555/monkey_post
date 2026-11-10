@@ -9,6 +9,7 @@ import { MultiplayerModal } from './ui/MultiplayerModal';
 import { PenaltyShootoutHUD } from './ui/PenaltyShootout';
 import { RotateOverlay } from './ui/RotateOverlay';
 import { ArcadeHub } from './ui/ArcadeHub';
+import { AyoGame } from './games/ayo/AyoGame';
 import {
   GameMode,
   MatchScore,
@@ -206,9 +207,17 @@ export const App: React.FC = () => {
         />
       )}
 
+      {/* --- AYÒ OLỌ́PỌ́N 3D GAME EXPERIENCE --- */}
+      {activeGameId === 'ayo_olopon' && (
+        <AyoGame onExit={handleReturnToHub} />
+      )}
+
       {/* --- MONKEY POST 3D GAME EXPERIENCE --- */}
       {/* 3D WebGL Canvas Viewport (runs in background for zero-delay instant launch) */}
-      <div ref={containerRef} className="absolute inset-0 w-full h-full" />
+      <div
+        ref={containerRef}
+        className={`absolute inset-0 w-full h-full ${activeGameId === 'monkey_post' ? 'block' : 'hidden'}`}
+      />
 
       {/* Naija Pidgin Commentary Banner */}
       {activeGameId === 'monkey_post' && (

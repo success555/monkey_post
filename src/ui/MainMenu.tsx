@@ -36,9 +36,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     const isBrowser = typeof window !== 'undefined';
     const currentHost = isBrowser ? window.location.hostname : '192.168.1.25';
     const currentPort = isBrowser && window.location.port ? window.location.port : '3000';
-    
-    const phoneHost = currentHost === 'localhost' || currentHost === '127.0.0.1' 
-      ? '192.168.1.25' 
+
+    const phoneHost = currentHost === 'localhost' || currentHost === '127.0.0.1'
+      ? '192.168.1.25'
       : currentHost;
 
     return {
@@ -118,11 +118,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             {/* 3D Model (.GLB) Loader Button */}
             <button
               onClick={() => setShowModelModal(true)}
-              className={`flex items-center space-x-1 px-2 py-0.5 sm:px-2 sm:py-1 rounded-lg sm:rounded-xl border text-[9px] sm:text-[11px] font-black transition-all active:scale-95 ${
-                customModelLoaded
-                  ? 'bg-blue-600/30 border-blue-400 text-blue-300'
-                  : 'bg-zinc-800/90 border-cyan-500/40 text-cyan-300 hover:bg-zinc-700'
-              }`}
+              className={`flex items-center space-x-1 px-2 py-0.5 sm:px-2 sm:py-1 rounded-lg sm:rounded-xl border text-[9px] sm:text-[11px] font-black transition-all active:scale-95 ${customModelLoaded
+                ? 'bg-blue-600/30 border-blue-400 text-blue-300'
+                : 'bg-zinc-800/90 border-cyan-500/40 text-cyan-300 hover:bg-zinc-700'
+                }`}
             >
               <Box className="w-3 h-3 text-cyan-400" />
               <span>{customModelLoaded ? '3D GLB' : '3D ASSETS'}</span>
@@ -134,11 +133,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <button
               onClick={() => setBossUnlocked(!bossUnlocked)}
               title={bossUnlocked ? "Boss Team Unlocked" : "Unlock Boss Team"}
-              className={`flex items-center space-x-1 px-2 py-0.5 sm:px-2 sm:py-1 rounded-lg sm:rounded-xl border text-[9px] sm:text-[11px] font-black transition-all ${
-                bossUnlocked
-                  ? 'bg-amber-500/20 border-amber-400 text-amber-300'
-                  : 'bg-zinc-800 border-zinc-600 text-zinc-400'
-              }`}
+              className={`flex items-center space-x-1 px-2 py-0.5 sm:px-2 sm:py-1 rounded-lg sm:rounded-xl border text-[9px] sm:text-[11px] font-black transition-all ${bossUnlocked
+                ? 'bg-amber-500/20 border-amber-400 text-amber-300'
+                : 'bg-zinc-800 border-zinc-600 text-zinc-400'
+                }`}
             >
               <Crown className="w-3 h-3 text-amber-400" />
               <span>{bossUnlocked ? 'BOSS' : 'UNLOCK BOSS'}</span>
@@ -211,13 +209,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     <button
                       key={`home_${team.id}`}
                       onClick={() => setSelectedHomeIndex(idx)}
-                      className={`py-0.5 px-0.5 rounded text-[7.5px] sm:text-[8.5px] font-black transition-all truncate text-center ${
-                        selectedHomeIndex === idx
-                          ? 'bg-emerald-500 text-black shadow-md'
-                          : team.isBoss
+                      className={`py-0.5 px-0.5 rounded text-[7.5px] sm:text-[8.5px] font-black transition-all truncate text-center ${selectedHomeIndex === idx
+                        ? 'bg-emerald-500 text-black shadow-md'
+                        : team.isBoss
                           ? 'bg-amber-950/70 border border-amber-500/40 text-amber-300 hover:bg-amber-900/60'
                           : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                      }`}
+                        }`}
                     >
                       {team.shortName}
                     </button>
@@ -262,13 +259,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     <button
                       key={`away_${team.id}`}
                       onClick={() => setSelectedAwayIndex(idx)}
-                      className={`py-0.5 px-0.5 rounded text-[7.5px] sm:text-[8.5px] font-black transition-all truncate text-center ${
-                        selectedAwayIndex === idx
-                          ? 'bg-rose-500 text-white shadow-md'
-                          : team.isBoss
+                      className={`py-0.5 px-0.5 rounded text-[7.5px] sm:text-[8.5px] font-black transition-all truncate text-center ${selectedAwayIndex === idx
+                        ? 'bg-rose-500 text-white shadow-md'
+                        : team.isBoss
                           ? 'bg-amber-950/70 border border-amber-500/40 text-amber-300 hover:bg-amber-900/60'
                           : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                      }`}
+                        }`}
                     >
                       {team.shortName}
                     </button>
@@ -285,11 +281,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   <button
                     key={mins}
                     onClick={() => setDurationMinutes(mins)}
-                    className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-black transition-all ${
-                      durationMinutes === mins
-                        ? 'bg-amber-400 text-black shadow-md'
-                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                    }`}
+                    className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-black transition-all ${durationMinutes === mins
+                      ? 'bg-amber-400 text-black shadow-md'
+                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                      }`}
                   >
                     {mins} MINS
                   </button>
@@ -443,11 +438,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </div>
 
             {/* Current Status Pill */}
-            <div className={`p-3 rounded-2xl border mb-3 flex items-center justify-between text-xs font-bold ${
-              customModelLoaded
-                ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
-                : 'bg-zinc-800/80 border-white/10 text-zinc-300'
-            }`}>
+            <div className={`p-3 rounded-2xl border mb-3 flex items-center justify-between text-xs font-bold ${customModelLoaded
+              ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
+              : 'bg-zinc-800/80 border-white/10 text-zinc-300'
+              }`}>
               <div className="flex items-center space-x-2">
                 {customModelLoaded ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />

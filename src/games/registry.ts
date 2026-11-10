@@ -42,23 +42,24 @@ export const ARCADE_GAMES: ArcadeGame[] = [
     title: 'Ayò Olọ́pọ́n 3D',
     tagline: 'Ancient Yoruba 12-Pit Seed Sowing Strategy',
     category: 'Strategy',
-    status: 'coming_soon',
+    status: 'playable',
     players: '1 - 2 Players',
     difficulty: 'Competitive',
-    badge: 'COMING SOON',
-    badgeColor: 'bg-orange-500 text-white shadow-orange-500/50',
+    badge: 'PLAYABLE NOW',
+    badgeColor: 'bg-emerald-500 text-black shadow-emerald-500/50',
     iconEmoji: '🪵',
     bannerGradient: 'from-amber-700/30 via-orange-800/30 to-black',
     accentColor: '#ea580c',
     description: 'The royal board game of West Africa. Sower pits, tactical seed hoarding, and lightning captures played on carved iroko wood boards against master street elders.',
     features: [
-      '12 Carved Wood Pits & 48 Polished Omo-Ayo Seeds',
-      'Classic Yoruba Master AI with Dynamic Mind Games',
-      'Pass & Play Local 2-Player Matchups',
-      'Traditional African Drumming Soundscapes'
+      '3D Carved Iroko Wood Board with 12 Pits & 48 Organic Seeds',
+      'Authentic Yoruba Rules: Anti-Clockwise Sowing & Backward Chain Captures',
+      'Anti-Starvation Odu Law Enforcement',
+      'Elder Baale AI with 3 Difficulty Tiers (Rookie, Trader, Baale)',
+      'Pass & Play Local 2-Player Matchups with Procedural Audio'
     ],
-    controlsSummary: 'Touch pit to pick up and sow seeds anti-clockwise',
-    actionLabel: 'EXPLORE PREVIEW'
+    controlsSummary: 'Click/Touch glowing pit on your side to sow counter-clockwise',
+    actionLabel: 'PLAY AYÒ NOW'
   },
   {
     id: 'suwe_hopscotch',
@@ -127,3 +128,4 @@ export const ARCADE_GAMES: ArcadeGame[] = [
     actionLabel: 'EXPLORE PREVIEW'
   }
 ];
+
