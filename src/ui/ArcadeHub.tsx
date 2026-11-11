@@ -401,10 +401,10 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                     </div>
                   </div>
 
-                  <div className="shrink-0 flex sm:flex-col justify-end">
+                  <div className="shrink-0 flex items-center mt-3 md:mt-0">
                     <button
                       onClick={() => handleLaunchGame('monkey_post')}
-                      className="w-full sm:w-auto px-5 sm:px-8 py-2 sm:py-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all active:scale-95 group-hover:scale-105"
+                      className="w-full md:w-auto px-6 sm:px-8 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl bg-amber-400 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 text-black font-display font-black text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-amber-500/30 flex items-center justify-center space-x-2 transition-all active:scale-95 group-hover:scale-105"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
                       <span>PLAY MONKEY POST NOW</span>
@@ -507,7 +507,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                   <div className="relative z-10 pt-1.5 sm:pt-2 mt-1 sm:mt-2 border-t border-white/10">
                     <button
                       onClick={() => handleLaunchGame(game.id)}
-                      className="w-full py-1 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-[10px] sm:text-xs tracking-wider uppercase shadow-lg shadow-amber-400/20 flex items-center justify-center space-x-1.5 transition-all active:scale-95 game-play-btn"
+                      className="w-full py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl bg-amber-400 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 text-black font-display font-black text-[10px] sm:text-xs tracking-wider uppercase shadow-lg shadow-amber-400/25 flex items-center justify-center space-x-1.5 transition-all active:scale-95 game-play-btn"
                     >
                       <Play className="w-3 h-3 fill-current" />
                       <span>{game.actionLabel}</span>
