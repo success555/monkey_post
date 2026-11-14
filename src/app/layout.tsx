@@ -13,11 +13,6 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'Naija Street Arcade',
   },
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'screen-orientation': 'landscape',
-    'x5-orientation': 'landscape',
-  },
 };
 
 export const viewport: Viewport = {
@@ -37,12 +32,12 @@ export default function RootLayout({
   const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_d29ydGh5LW1hbnRpcy0zNjIzLmNsZXJrLmFjY291bnRzLmRldiQ';
 
   return (
-    <ClerkProvider publishableKey={clerkKey}>
-      <html lang="en">
-        <body className="bg-zinc-950 text-white font-sans antialiased overflow-x-hidden w-full min-h-screen">
+    <html lang="en">
+      <body className="bg-zinc-950 text-white font-sans antialiased overflow-x-hidden w-full min-h-screen">
+        <ClerkProvider publishableKey={clerkKey}>
           {children}
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
