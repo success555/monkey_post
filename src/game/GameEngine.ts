@@ -797,8 +797,8 @@ export class GameEngine {
 
   private onWindowResize = () => {
     if (!this.container || !this.renderer || !this.camera) return;
-    const width = this.container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 0);
-    const height = this.container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 0);
+    const width = (this.container.clientWidth > 50 ? this.container.clientWidth : (typeof window !== 'undefined' ? window.innerWidth : 0)) || 800;
+    const height = (this.container.clientHeight > 50 ? this.container.clientHeight : (typeof window !== 'undefined' ? window.innerHeight : 0)) || 600;
     if (width <= 0 || height <= 0 || !Number.isFinite(width) || !Number.isFinite(height)) return;
     const aspect = width / height;
     if (!Number.isFinite(aspect) || aspect <= 0) return;

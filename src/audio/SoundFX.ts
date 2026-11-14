@@ -283,6 +283,32 @@ class SoundFXManager {
     osc.start(t);
     osc.stop(t + duration);
   }
+
+  // Coin or reward chime sound
+  public playCoin() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    [987.77, 1318.51].forEach((freq, idx) => {
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + idx * 0.08);
+
+      gain.gain.setValueAtTime(0, t + idx * 0.08);
+      gain.gain.linearRampToValueAtTime(this.volume * 0.4, t + idx * 0.08 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.08 + 0.3);
+
+      osc.connect(gain);
+      gain.connect(this.ctx!.destination);
+
+      osc.start(t + idx * 0.08);
+      osc.stop(t + idx * 0.08 + 0.32);
+    });
+  }
 }
 
 export const soundFX = new SoundFXManager();

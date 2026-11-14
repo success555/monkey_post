@@ -47,8 +47,8 @@ export class AyoScene3D {
     this.scene.add(this.boardGroup);
 
     // Setup Camera (Overhead Angled View) with safe dimension fallbacks
-    const width = container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 800) || 800;
-    const height = container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600) || 600;
+    const width = (container.clientWidth > 50 ? container.clientWidth : (typeof window !== 'undefined' ? window.innerWidth : 800)) || 800;
+    const height = (container.clientHeight > 50 ? container.clientHeight : (typeof window !== 'undefined' ? window.innerHeight : 600)) || 600;
     const aspect = (width > 0 && height > 0) ? width / height : (16 / 9);
 
     this.camera = new THREE.PerspectiveCamera(42, Number.isFinite(aspect) && aspect > 0 ? aspect : 16 / 9, 0.1, 100);
@@ -129,12 +129,16 @@ export class AyoScene3D {
 
   // Realistic Warm Nigerian Tabletop Lighting
   private setupLighting() {
+    // Warm hemisphere ambient light: sunny gold above, rich earth warm brown below
+    const hemi = new THREE.HemisphereLight(0xffedd5, 0x5c3822, 1.2);
+    this.scene.add(hemi);
+
     // Warm ambient light
-    const ambient = new THREE.AmbientLight(0xfffaee, 0.85);
+    const ambient = new THREE.AmbientLight(0xfffaee, 0.95);
     this.scene.add(ambient);
 
     // Key Light: Overhead warm sunlight
-    const keyLight = new THREE.DirectionalLight(0xffedd5, 1.85);
+    const keyLight = new THREE.DirectionalLight(0xffedd5, 2.0);
     keyLight.position.set(5, 14, 8);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.width = 2048;
@@ -148,16 +152,16 @@ export class AyoScene3D {
     keyLight.shadow.bias = -0.0005;
     this.scene.add(keyLight);
 
-    // Fill Light: Soft blue reflection
-    const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.65);
+    // Fill Light: Soft blue-white reflection
+    const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.85);
     fillLight.position.set(-6, 8, -6);
     this.scene.add(fillLight);
   }
 
   // Rich Traditional Nigerian Room Setting
   private setupRoomEnvironment() {
-    // Room background color (deep warm dark charcoal)
-    this.scene.background = new THREE.Color(0x0e0e11);
+    // Room background color (warm deep mahogany ambient)
+    this.scene.background = new THREE.Color(0x1a1512);
 
     // Underlying Rustic Wooden Table Mat
     const tableGeo = new THREE.PlaneGeometry(36, 26);
@@ -165,7 +169,7 @@ export class AyoScene3D {
     tableCanvas.width = 512;
     tableCanvas.height = 512;
     const tCtx = tableCanvas.getContext('2d')!;
-    tCtx.fillStyle = '#1c1917';
+    tCtx.fillStyle = '#292524';
     tCtx.fillRect(0, 0, 512, 512);
     // Subtle wood grain streaks
     tCtx.fillStyle = 'rgba(41, 37, 36, 0.6)';
@@ -173,8 +177,10 @@ export class AyoScene3D {
       tCtx.fillRect(0, Math.random() * 512, 512, 1 + Math.random() * 3);
     }
     const tableTex = new THREE.CanvasTexture(tableCanvas);
+    tableTex.needsUpdate = true;
     const tableMat = new THREE.MeshStandardMaterial({
       map: tableTex,
+      color: 0x2e2318,
       roughness: 0.88,
       metalness: 0.05
     });
@@ -193,7 +199,7 @@ export class AyoScene3D {
     const ctx = canvas.getContext('2d')!;
 
     // Rich Iroko wood base color
-    ctx.fillStyle = '#5c3822';
+    ctx.fillStyle = '#6e4327';
     ctx.fillRect(0, 0, 1024, 512);
 
     // Longitudinal organic wood rings
@@ -230,6 +236,7 @@ export class AyoScene3D {
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.needsUpdate = true;
     return tex;
   }
 
@@ -238,6 +245,7 @@ export class AyoScene3D {
     const woodTex = this.createWoodTexture();
     const woodMat = new THREE.MeshStandardMaterial({
       map: woodTex,
+      color: 0x8b5a2b, // Fallback warm iroko wood color
       roughness: 0.42,
       metalness: 0.08
     });
@@ -621,8 +629,8 @@ export class AyoScene3D {
 
   private onResize = () => {
     if (!this.container || !this.renderer || !this.camera) return;
-    const width = this.container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 0);
-    const height = this.container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 0);
+    const width = (this.container.clientWidth > 50 ? this.container.clientWidth : (typeof window !== 'undefined' ? window.innerWidth : 0)) || 800;
+    const height = (this.container.clientHeight > 50 ? this.container.clientHeight : (typeof window !== 'undefined' ? window.innerHeight : 0)) || 600;
     if (width <= 0 || height <= 0 || !Number.isFinite(width) || !Number.isFinite(height)) return;
     const aspect = width / height;
     if (!Number.isFinite(aspect) || aspect <= 0) return;

@@ -26,6 +26,8 @@ import {
 } from './types/game';
 import { TEAMS } from './game/constants';
 import { soundFX } from './audio/SoundFX';
+import { arcadeApi } from './lib/api/arcadeApi';
+import { authStore } from './auth/authStore';
 
 export const App: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -66,9 +68,15 @@ export const App: React.FC = () => {
     away: []
   });
 
-  // Initialize 3D Engine
+  // Initialize 3D Engine dynamically when Monkey Post is selected
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (activeGameId !== 'monkey_post' || !containerRef.current) {
+      if (engineRef.current) {
+        engineRef.current.dispose();
+        engineRef.current = null;
+      }
+      return;
+    }
 
     const engine = new GameEngine(containerRef.current);
     engineRef.current = engine;
@@ -101,6 +109,19 @@ export const App: React.FC = () => {
       setMatchWinner(winner);
       setShowMatchOverModal(true);
       setMatchState('fulltime');
+
+      // Record match to backend API and update leaderboard/coins
+      const user = authStore.getCurrentUser();
+      arcadeApi.recordMatch({
+        userId: user?.id,
+        gameId: 'monkey_post',
+        gameTitle: 'Monkey Post 3D',
+        mode: gameMode,
+        scoreHome: finalScore.home,
+        scoreAway: finalScore.away,
+        winner: finalScore.home > finalScore.away ? 'home' : finalScore.home < finalScore.away ? 'away' : 'draw',
+        goals: finalScore.home
+      }).catch(() => {});
     };
 
     // State Polling Loop for HUD & Minimap (every 60ms)
@@ -122,12 +143,26 @@ export const App: React.FC = () => {
       }
     }, 60);
 
+    // Initial resize passes on mount
+    const triggerResize = () => {
+      engine.resize();
+    };
+    triggerResize();
+    const raf = requestAnimationFrame(triggerResize);
+    const t1 = setTimeout(triggerResize, 60);
+    const t2 = setTimeout(triggerResize, 180);
+    const t3 = setTimeout(triggerResize, 400);
+
     return () => {
       clearInterval(interval);
+      cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       engine.dispose();
       engineRef.current = null;
     };
-  }, []);
+  }, [activeGameId]);
 
   // Guarantee instant WebGL viewport recalculation whenever Monkey Post is active or match begins
   useEffect(() => {
@@ -276,12 +311,14 @@ export const App: React.FC = () => {
       )}
 
       {/* --- MONKEY POST 3D GAME EXPERIENCE --- */}
-      {/* 3D WebGL Canvas Viewport (runs in background for zero-delay instant launch) */}
-      <div
-        ref={containerRef}
-        className={`absolute inset-0 w-full h-full overflow-hidden ${activeGameId === 'monkey_post' ? 'block z-0' : 'hidden'}`}
-        style={{ width: '100%', height: '100%' }}
-      />
+      {/* 3D WebGL Canvas Viewport */}
+      {activeGameId === 'monkey_post' && (
+        <div
+          ref={containerRef}
+          className="absolute inset-0 w-full h-full overflow-hidden block z-0"
+          style={{ width: '100%', height: '100%' }}
+        />
+      )}
 
       {/* Naija Pidgin Commentary Banner */}
       {activeGameId === 'monkey_post' && (

@@ -1,284 +1,190 @@
 -- =======================================================================
--- NAIJA STREET ARCADE — SUPABASE POSTGRESQL PRODUCTION SCHEMA BLUEPRINT
+-- NAIJA STREET ARCADE - PRODUCTION SUPABASE DATABASE SCHEMA
 -- =======================================================================
--- Fully integrated with:
--- 1. CLERK AUTHENTICATION (User IDs synced as 'user_2...')
--- 2. SUPABASE ROW LEVEL SECURITY (RLS) & STORAGE BUCKETS
--- 3. RESEND TRANSACTIONAL EMAIL LOGS & AUDIT TRAILS
+-- Run this migration in your Supabase SQL Editor:
+-- https://app.supabase.com/project/_/sql
 -- =======================================================================
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- =======================================================================
--- 1. PROFILES TABLE (Linked 1:1 with Clerk User IDs)
--- =======================================================================
-CREATE TABLE IF NOT EXISTS public.profiles (
-  id TEXT PRIMARY KEY, -- Clerk User ID (e.g. 'user_2xyz789...')
-  email TEXT NOT NULL UNIQUE,
-  username TEXT NOT NULL UNIQUE,
-  display_name TEXT NOT NULL,
-  avatar_url TEXT DEFAULT '⚽',
-  role TEXT NOT NULL DEFAULT 'player' CHECK (role IN ('player', 'admin', 'moderator')),
-  street_coins BIGINT NOT NULL DEFAULT 1500, -- 1,500 Street Coins Welcome Bonus
-  level INT NOT NULL DEFAULT 1,
-  xp BIGINT NOT NULL DEFAULT 0,
-  rank TEXT NOT NULL DEFAULT 'Street Rookie',
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'banned', 'vip')),
-  phone_number TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- 1. PROFILES TABLE (Synced with Clerk Authentication)
+create table if not exists public.profiles (
+  id text primary key, -- Clerk User ID (e.g. user_2t...)
+  email text,
+  username text unique,
+  display_name text,
+  avatar_url text default '⚽',
+  role text default 'player' check (role in ('player', 'admin')),
+  street_coins bigint default 1500,
+  level integer default 1,
+  xp bigint default 0,
+  rank text default 'Street Rookie',
+  status text default 'active' check (status in ('active', 'banned', 'vip')),
+  matches_played integer default 0,
+  wins integer default 0,
+  losses integer default 0,
+  win_rate numeric default 0.0,
+  goals_scored integer default 0,
+  ayo_captures integer default 0,
+  chops_count integer default 0,
+  high_break integer default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
--- Index for high-speed searches
-CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
-CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
-CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
-CREATE INDEX IF NOT EXISTS idx_profiles_coins ON public.profiles(street_coins DESC);
-
--- =======================================================================
--- 2. GAME STATS TABLE
--- =======================================================================
-CREATE TABLE IF NOT EXISTS public.game_stats (
-  profile_id TEXT PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
-  matches_played INT NOT NULL DEFAULT 0,
-  wins INT NOT NULL DEFAULT 0,
-  losses INT NOT NULL DEFAULT 0,
-  win_rate NUMERIC(5,2) GENERATED ALWAYS AS (
-    CASE WHEN matches_played > 0 THEN ROUND((wins::numeric / matches_played::numeric) * 100, 2)
-    ELSE 0.00 END
-  ) STORED,
-  -- Game specific milestones
-  monkey_post_goals INT NOT NULL DEFAULT 0,
-  ludo_chops INT NOT NULL DEFAULT 0,
-  snooker_high_break INT NOT NULL DEFAULT 0,
-  snooker_centuries INT NOT NULL DEFAULT 0,
-  ayo_seeds_captured INT NOT NULL DEFAULT 0,
-  whot_games_won INT NOT NULL DEFAULT 0,
-  tenten_max_combos INT NOT NULL DEFAULT 0,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- 2. MATCH HISTORY TABLE
+create table if not exists public.game_matches (
+  id uuid primary key default gen_random_uuid(),
+  user_id text references public.profiles(id) on delete cascade,
+  game_id text not null, -- 'monkey_post', 'ayo_olopon', 'naija_whot', 'ten_ten', 'naija_ludo_3d', 'snooker_3d'
+  game_title text not null,
+  mode text default 'exhibition',
+  score_home integer default 0,
+  score_away integer default 0,
+  winner text check (winner in ('home', 'away', 'draw')),
+  coins_earned integer default 0,
+  xp_earned integer default 0,
+  duration_seconds integer default 0,
+  metadata jsonb default '{}'::jsonb,
+  played_at timestamptz default now()
 );
 
--- Index for leaderboard queries
-CREATE INDEX IF NOT EXISTS idx_game_stats_wins ON public.game_stats(wins DESC);
-CREATE INDEX IF NOT EXISTS idx_game_stats_break ON public.game_stats(snooker_high_break DESC);
-
--- =======================================================================
--- 3. MATCH HISTORY TABLE
--- =======================================================================
-CREATE TABLE IF NOT EXISTS public.match_history (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  game_id TEXT NOT NULL, -- 'monkey_post' | 'naija_ludo_3d' | 'snooker_3d' | 'ayo_olopon' | 'naija_whot' | 'ten_ten'
-  player1_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  player2_id TEXT NOT NULL, -- User ID or 'ai_bros_emeka' / 'ai_alhaji_snooker'
-  player1_score INT NOT NULL DEFAULT 0,
-  player2_score INT NOT NULL DEFAULT 0,
-  winner_id TEXT, -- User ID or NULL for draw
-  coins_wagered BIGINT NOT NULL DEFAULT 0,
-  coins_won BIGINT NOT NULL DEFAULT 0,
-  duration_seconds INT NOT NULL DEFAULT 0,
-  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-  played_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- 3. PLAYER INVENTORY (Items purchased from Street Vault Shop)
+create table if not exists public.player_inventory (
+  id uuid primary key default gen_random_uuid(),
+  user_id text references public.profiles(id) on delete cascade,
+  item_id text not null,
+  item_name text not null,
+  item_type text not null, -- 'ball', 'board', 'card_skin', 'cue', 'title'
+  price_paid integer not null,
+  purchased_at timestamptz default now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_matches_player1 ON public.match_history(player1_id);
-CREATE INDEX IF NOT EXISTS idx_matches_game ON public.match_history(game_id, played_at DESC);
-
--- =======================================================================
--- 4. TOURNAMENTS TABLE
--- =======================================================================
-CREATE TABLE IF NOT EXISTS public.tournaments (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  game_id TEXT NOT NULL,
-  prize_pool TEXT NOT NULL,
-  entry_fee_coins BIGINT NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'live', 'completed', 'cancelled')),
-  max_participants INT NOT NULL DEFAULT 32,
-  current_participants INT NOT NULL DEFAULT 0,
-  winner_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,
-  start_date TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- 4. DAILY QUESTS & REWARDS
+create table if not exists public.daily_quests (
+  id uuid primary key default gen_random_uuid(),
+  user_id text references public.profiles(id) on delete cascade,
+  quest_id text not null,
+  quest_title text not null,
+  progress integer default 0,
+  target integer default 1,
+  reward_coins integer default 250,
+  claimed boolean default false,
+  quest_date date default current_date
 );
 
-CREATE TABLE IF NOT EXISTS public.tournament_entries (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
-  profile_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  seed_number INT,
-  eliminated BOOLEAN NOT NULL DEFAULT FALSE,
-  joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (tournament_id, profile_id)
+-- 5. TOURNAMENTS
+create table if not exists public.tournaments (
+  id text primary key,
+  title text not null,
+  game_id text not null,
+  game_title text not null,
+  prize_pool text default '50,000 Coins',
+  participants integer default 0,
+  max_participants integer default 64,
+  status text default 'live' check (status in ('upcoming', 'live', 'completed')),
+  start_date timestamptz default now()
 );
 
--- =======================================================================
--- 5. COIN TRANSACTIONS AUDIT LEDGER
--- =======================================================================
-CREATE TABLE IF NOT EXISTS public.coin_transactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  amount BIGINT NOT NULL, -- Positive for rewards, negative for purchases/wagers
-  balance_after BIGINT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN (
-    'welcome_bonus', 'daily_quest', 'match_win', 'match_wager',
-    'tournament_entry', 'tournament_prize', 'admin_gift', 'shop_unlock'
-  )),
-  description TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- 6. EMAIL AUDIT LOG (Resend email delivery tracking)
+create table if not exists public.email_logs (
+  id uuid primary key default gen_random_uuid(),
+  recipient text not null,
+  user_id text,
+  subject text not null,
+  template text not null,
+  resend_id text,
+  status text default 'sent',
+  error_message text,
+  sent_at timestamptz default now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_coin_trans_profile ON public.coin_transactions(profile_id, created_at DESC);
+-- 7. ATOMIC FUNCTIONS FOR SAFE IN-GAME TRANSACTIONS
+-- Increment / Decrement Coins Atomically
+create or replace function public.increment_coins(user_id text, coin_amount integer)
+returns void as $$
+begin
+  update public.profiles
+  set 
+    street_coins = greatest(0, street_coins + coin_amount),
+    updated_at = now()
+  where id = user_id;
+end;
+$$ language plpgsql security definer;
 
--- =======================================================================
--- 6. ARCADE GAMES REGISTRY TABLE
--- =======================================================================
-CREATE TABLE IF NOT EXISTS public.arcade_games (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  tagline TEXT NOT NULL,
-  category TEXT NOT NULL CHECK (category IN ('Sports', 'Strategy', 'Cards', 'Rhythm', 'Arcade')),
-  status TEXT NOT NULL DEFAULT 'playable' CHECK (status IN ('playable', 'coming_soon', 'in_development', 'maintenance')),
-  players TEXT NOT NULL DEFAULT '1 - 2 Players',
-  difficulty TEXT NOT NULL DEFAULT 'Competitive',
-  badge TEXT NOT NULL DEFAULT 'PLAYABLE NOW',
-  badge_color TEXT NOT NULL DEFAULT 'bg-emerald-500 text-black',
-  icon_emoji TEXT NOT NULL DEFAULT '🎮',
-  banner_gradient TEXT NOT NULL DEFAULT 'from-amber-500/30 to-black',
-  accent_color TEXT NOT NULL DEFAULT '#facc15',
-  description TEXT NOT NULL,
-  features JSONB NOT NULL DEFAULT '[]'::jsonb,
-  is_featured BOOLEAN NOT NULL DEFAULT FALSE,
-  total_plays BIGINT NOT NULL DEFAULT 0,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- Record Match Result & Update Player Stats Atomically
+create or replace function public.record_match_result(
+  p_user_id text,
+  p_game_id text,
+  p_game_title text,
+  p_mode text,
+  p_score_home integer,
+  p_score_away integer,
+  p_winner text,
+  p_coins_earned integer,
+  p_xp_earned integer,
+  p_goals integer default 0,
+  p_ayo_captures integer default 0,
+  p_chops integer default 0,
+  p_high_break integer default 0
+) returns jsonb as $$
+declare
+  v_is_win boolean;
+  v_new_xp bigint;
+  v_new_level integer;
+  v_new_rank text;
+  v_result jsonb;
+begin
+  v_is_win := (p_winner = 'home');
 
--- =======================================================================
--- 7. RESEND EMAIL AUDIT LOGS
--- =======================================================================
-CREATE TABLE IF NOT EXISTS public.email_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  recipient_email TEXT NOT NULL,
-  recipient_user_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,
-  subject TEXT NOT NULL,
-  template_name TEXT NOT NULL, -- 'welcome_bonus', 'tournament_alert', 'admin_announcement', 'security_login'
-  resend_id TEXT,
-  status TEXT NOT NULL DEFAULT 'sent' CHECK (status IN ('sent', 'delivered', 'bounced', 'failed')),
-  error_message TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+  -- Update player stats
+  update public.profiles
+  set
+    matches_played = matches_played + 1,
+    wins = wins + (case when v_is_win then 1 else 0 end),
+    losses = losses + (case when not v_is_win and p_winner != 'draw' then 1 else 0 end),
+    win_rate = round(((wins + (case when v_is_win then 1 else 0 end))::numeric / (matches_played + 1)::numeric) * 100, 1),
+    street_coins = greatest(0, street_coins + p_coins_earned),
+    xp = xp + p_xp_earned,
+    level = greatest(1, floor((xp + p_xp_earned) / 1000) + 1),
+    goals_scored = goals_scored + p_goals,
+    ayo_captures = ayo_captures + p_ayo_captures,
+    chops_count = chops_count + p_chops,
+    high_break = greatest(high_break, p_high_break),
+    updated_at = now()
+  where id = p_user_id
+  returning jsonb_build_object(
+    'street_coins', street_coins,
+    'level', level,
+    'xp', xp,
+    'rank', rank,
+    'wins', wins,
+    'matches_played', matches_played
+  ) into v_result;
 
-CREATE INDEX IF NOT EXISTS idx_email_logs_recipient ON public.email_logs(recipient_email, created_at DESC);
-
--- =======================================================================
--- 8. ROW LEVEL SECURITY (RLS) POLICIES
--- =======================================================================
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.game_stats ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.match_history ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tournament_entries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.coin_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.arcade_games ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.email_logs ENABLE ROW LEVEL SECURITY;
-
--- Helper to check if caller has 'admin' role
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = auth.uid()::text AND role = 'admin'
+  -- Record match in history
+  insert into public.game_matches (
+    user_id, game_id, game_title, mode, score_home, score_away, winner, coins_earned, xp_earned
+  ) values (
+    p_user_id, p_game_id, p_game_title, p_mode, p_score_home, p_score_away, p_winner, p_coins_earned, p_xp_earned
   );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Profiles: Public can view basic info; users can update own profile; admins can manage all
-CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
-  FOR SELECT USING (true);
+  return v_result;
+end;
+$$ language plpgsql security definer;
 
-CREATE POLICY "Users can update their own profile" ON public.profiles
-  FOR UPDATE USING (auth.uid()::text = id OR public.is_admin());
+-- 8. ROW LEVEL SECURITY (RLS) POLICIES
+alter table public.profiles enable row level security;
+alter table public.game_matches enable row level security;
+alter table public.player_inventory enable row level security;
+alter table public.daily_quests enable row level security;
+alter table public.tournaments enable row level security;
 
--- Game Stats: Viewable by everyone; updated via server service role or match completion
-CREATE POLICY "Stats viewable by everyone" ON public.game_stats
-  FOR SELECT USING (true);
+-- Public can read leaderboards and profiles
+create policy "Allow public read of profiles" on public.profiles for select using (true);
+create policy "Allow public read of tournaments" on public.tournaments for select using (true);
 
--- Match History: Viewable by participants and admins
-CREATE POLICY "Matches viewable by everyone" ON public.match_history
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can record matches" ON public.match_history
-  FOR INSERT WITH CHECK (auth.uid()::text = player1_id OR public.is_admin());
-
--- Arcade Games Catalog: Viewable by all; manageable by admins
-CREATE POLICY "Arcade games viewable by all" ON public.arcade_games
-  FOR SELECT USING (true);
-
-CREATE POLICY "Arcade games manageable by admin" ON public.arcade_games
-  FOR ALL USING (public.is_admin());
-
--- Tournaments: Viewable by all; manageable by admins
-CREATE POLICY "Tournaments viewable by all" ON public.tournaments
-  FOR SELECT USING (true);
-
-CREATE POLICY "Tournaments manageable by admin" ON public.tournaments
-  FOR ALL USING (public.is_admin());
-
--- Coin Transactions: Users view own transactions; admins view all
-CREATE POLICY "Users view own coin transactions" ON public.coin_transactions
-  FOR SELECT USING (auth.uid()::text = profile_id OR public.is_admin());
-
--- Email Logs: Admins only
-CREATE POLICY "Email logs viewable by admin only" ON public.email_logs
-  FOR ALL USING (public.is_admin());
-
--- =======================================================================
--- 9. CLERK SYNC WEBHOOK FUNCTION & TRIGGER
--- =======================================================================
--- Automatically provisions profiles and game_stats when Clerk user is created
-CREATE OR REPLACE FUNCTION public.handle_new_clerk_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.game_stats (profile_id)
-  VALUES (NEW.id)
-  ON CONFLICT (profile_id) DO NOTHING;
-
-  -- Record welcome bonus coins
-  INSERT INTO public.coin_transactions (profile_id, amount, balance_after, type, description)
-  VALUES (NEW.id, NEW.street_coins, NEW.street_coins, 'welcome_bonus', 'Welcome to Naija Street Arcade! Initial street staking coins.');
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE OR REPLACE TRIGGER on_clerk_user_created
-  AFTER INSERT ON public.profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_clerk_user();
-
--- Automatically update updated_at timestamp
-CREATE OR REPLACE FUNCTION public.set_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE TRIGGER set_profiles_updated_at
-  BEFORE UPDATE ON public.profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION public.set_updated_at();
-
--- =======================================================================
--- 10. SUPABASE STORAGE BUCKETS
--- =======================================================================
--- Avatars, Game Assets (GLB 3D models), Match Replays
-INSERT INTO storage.buckets (id, name, public)
-VALUES 
-  ('avatars', 'avatars', true),
-  ('game_assets', 'game_assets', true),
-  ('match_replays', 'match_replays', false)
-ON CONFLICT (id) DO NOTHING;
-
+-- Service role has full unrestricted admin access (used by Next.js Server API)
+create policy "Service role full access on profiles" on public.profiles for all using (true);
+create policy "Service role full access on game_matches" on public.game_matches for all using (true);
+create policy "Service role full access on player_inventory" on public.player_inventory for all using (true);
+create policy "Service role full access on daily_quests" on public.daily_quests for all using (true);
+create policy "Service role full access on email_logs" on public.email_logs for all using (true);

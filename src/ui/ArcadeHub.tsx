@@ -13,6 +13,7 @@ import { UserAuthModal } from './UserAuthModal';
 import { AdminLoginModal } from './AdminLoginModal';
 import { UserProfileModal } from './UserProfileModal';
 import { useUser, UserButton } from '@clerk/nextjs';
+import { arcadeApi } from '../lib/api/arcadeApi';
 
 interface ArcadeHubProps {
   onSelectGame: (gameId: string) => void;
@@ -84,6 +85,14 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
 
   // Sync Clerk authenticated user to Arcade profile
   const { isSignedIn: isClerkSignedIn, user: clerkUser } = useUser();
+  const [liveLeaderboard, setLiveLeaderboard] = useState<any[]>([]);
+  const [dailyQuests, setDailyQuests] = useState<any[]>([
+    { id: 'daily_match_1', title: 'Play 1 Monkey Post Match', reward: 300, progress: '1/1', done: false, icon: '⚽' },
+    { id: 'daily_win_1', title: 'Win Any Street Match', reward: 500, progress: '1/1', done: false, icon: '🏆' },
+    { id: 'daily_ayo_1', title: 'Capture 4 Seeds in Ayò Olọ́pọ́n', reward: 400, progress: '2/4', done: false, icon: '🪵' },
+    { id: 'daily_whot_1', title: 'Play Whot 20 Card against Bros Chidi', reward: 300, progress: '1/1', done: true, icon: '🃏' }
+  ]);
+  const [shopFeedback, setShopFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (isClerkSignedIn && clerkUser) {
@@ -96,8 +105,57 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
       if (!existing || existing.id !== clerkUser.id) {
         authStore.register(clerkUser.id, email, displayName, avatar);
       }
+
+      // Full-Stack Server Sync via API
+      arcadeApi.syncUser({
+        id: clerkUser.id,
+        email,
+        username,
+        displayName,
+        avatar
+      }).then(res => {
+        if (res?.profile) {
+          setCurrentUser(authStore.getCurrentUser());
+        }
+      });
     }
   }, [isClerkSignedIn, clerkUser]);
+
+  // Load Live Leaderboard from Server
+  useEffect(() => {
+    if (activeHubTab === 'leaderboard') {
+      arcadeApi.getLeaderboard().then(data => {
+        if (data && data.length > 0) {
+          setLiveLeaderboard(data);
+        }
+      });
+    }
+  }, [activeHubTab]);
+
+  // Handle Shop Purchase via Server API
+  const handlePurchaseItem = async (item: { id: string; title: string; price: string }) => {
+    if (!currentUser) return;
+    const priceNum = parseInt(item.price.replace(/[^0-9]/g, ''), 10);
+    const res = await arcadeApi.purchaseShopItem(currentUser.id, item.id, item.title, 'equipment', priceNum);
+    if (res.success) {
+      soundFX.playCoin();
+      setShopFeedback(`🎉 Unlocked ${item.title}! Added to your equipment locker.`);
+      setTimeout(() => setShopFeedback(null), 3000);
+    } else {
+      setShopFeedback(`❌ ${res.error || 'Insufficient coins or network error'}`);
+      setTimeout(() => setShopFeedback(null), 3500);
+    }
+  };
+
+  // Handle Claiming Quest Rewards via Server API
+  const handleClaimQuest = async (questId: string) => {
+    if (!currentUser) return;
+    const res = await arcadeApi.claimQuest(currentUser.id, questId);
+    if (res.success) {
+      soundFX.playCoin();
+      setDailyQuests(prev => prev.map(q => q.id === questId ? { ...q, done: true } : q));
+    }
+  };
 
   // Filter games based on category tab
   const filteredGames = ARCADE_GAMES.filter(game => {
@@ -551,9 +609,9 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
             </div>
 
             <div className="space-y-2.5">
-              {authStore.getUsers().map((u, idx) => (
+              {(liveLeaderboard.length > 0 ? liveLeaderboard : authStore.getUsers()).map((u, idx) => (
                 <div
-                  key={u.id}
+                  key={u.id || idx}
                   className={`p-3 sm:p-4 rounded-2xl border backdrop-blur-md flex items-center justify-between transition-all ${
                     idx === 0 
                       ? 'bg-gradient-to-r from-amber-500/20 via-zinc-900 to-zinc-900 border-amber-500/50 shadow-xl' 
@@ -566,7 +624,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                       idx === 1 ? 'bg-zinc-300 text-black' :
                       idx === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-800 text-zinc-400'
                     }`}>
-                      #{idx + 1}
+                      #{u.rankNumber || idx + 1}
                     </div>
 
                     <div className="text-2xl">{u.avatar}</div>
@@ -585,11 +643,11 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                   <div className="flex items-center space-x-4 text-xs font-mono text-right">
                     <div>
                       <span className="text-[10px] text-zinc-500 uppercase block">Win Rate</span>
-                      <span className="font-bold text-emerald-400">{u.stats.winRate}%</span>
+                      <span className="font-bold text-emerald-400">{u.stats?.winRate ?? 0}%</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-zinc-500 uppercase block">Street Coins</span>
-                      <span className="font-bold text-amber-300">🪙 {u.streetCoins.toLocaleString()}</span>
+                      <span className="font-bold text-amber-300">🪙 {(u.streetCoins || 0).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -609,19 +667,13 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {[
-                { title: 'Score 2 Goals in Monkey Post 3D', reward: '🪙 500 Coins', progress: '1/2', done: false, icon: '⚽' },
-                { title: 'Roll a Double in Naija Ludo 3D', reward: '🪙 350 Coins', progress: '1/1', done: true, icon: '🎲' },
-                { title: 'Pot 3 Balls in a Row in Snooker', reward: '🪙 400 Coins', progress: '0/3', done: false, icon: '🎱' },
-                { title: 'Play Whot 20 Card against Bros Chidi', reward: '🪙 300 Coins', progress: '1/1', done: true, icon: '🃏' },
-                { title: 'Capture 4 Seeds in Ayò Olọ́pọ́n', reward: '🪙 450 Coins', progress: '2/4', done: false, icon: '🪵' }
-              ].map((q, idx) => (
-                <div key={idx} className="p-4 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-between shadow-lg">
+              {dailyQuests.map((q, idx) => (
+                <div key={q.id || idx} className="p-4 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-between shadow-lg">
                   <div className="flex items-center space-x-3">
                     <span className="text-2xl">{q.icon}</span>
                     <div>
                       <h4 className="text-xs sm:text-sm font-bold text-white">{q.title}</h4>
-                      <span className="text-[11px] font-mono font-bold text-amber-400">{q.reward}</span>
+                      <span className="text-[11px] font-mono font-bold text-amber-400">🪙 {q.reward} Coins</span>
                     </div>
                   </div>
 
@@ -632,7 +684,12 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                         <span>CLAIMED</span>
                       </span>
                     ) : (
-                      <span className="text-xs font-mono font-bold text-zinc-400">{q.progress}</span>
+                      <button
+                        onClick={() => handleClaimQuest(q.id)}
+                        className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase tracking-wider transition-all active:scale-95"
+                      >
+                        CLAIM
+                      </button>
                     )}
                   </div>
                 </div>
@@ -646,7 +703,7 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
         {/* ======================================================== */}
         {activeHubTab === 'shop' && (
           <div className="space-y-4 animate-in fade-in pb-8">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
               <div>
                 <h3 className="font-display text-base sm:text-lg text-white">Street Vault Equipment</h3>
                 <p className="text-xs text-zinc-400">Unlock custom balls, cues, and jersey skins with Street Coins.</p>
@@ -656,15 +713,21 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
               </div>
             </div>
 
+            {shopFeedback && (
+              <div className="p-3 rounded-xl bg-zinc-900 border border-amber-400/40 text-amber-300 text-xs font-bold animate-in fade-in">
+                {shopFeedback}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
-                { title: 'Golden Nigeria Retro Football', price: '2,500 Coins', icon: '⚽', desc: 'Vibrant green-white-gold stitched 3D match ball for Monkey Post.' },
-                { title: 'Ash & Rosewood Cue Stick', price: '3,200 Coins', icon: '🎱', desc: 'Championship English taper with blue Master chalk tip for Snooker 3D.' },
-                { title: 'Carved Iroko Seed Pits', price: '1,800 Coins', icon: '🪵', desc: 'Authentic royal Yoruba patterned seed pits for Ayò Olọ́pọ́n.' },
-                { title: 'Lagos Island Acrylic Ludo Pawns', price: '2,000 Coins', icon: '🎲', desc: 'Transparent glowing physical pawns with custom dice.' },
-                { title: 'Gold Foil Whot Card Deck', price: '1,500 Coins', icon: '🃏', desc: 'Premium metallic finished cards with special audio FX.' }
+                { id: 'ball_gold_retro', title: 'Golden Nigeria Retro Football', price: '2,500 Coins', icon: '⚽', desc: 'Vibrant green-white-gold stitched 3D match ball for Monkey Post.' },
+                { id: 'cue_rosewood', title: 'Ash & Rosewood Cue Stick', price: '3,200 Coins', icon: '🎱', desc: 'Championship English taper with blue Master chalk tip for Snooker 3D.' },
+                { id: 'board_iroko_carved', title: 'Carved Iroko Seed Pits', price: '1,800 Coins', icon: '🪵', desc: 'Authentic royal Yoruba patterned seed pits for Ayò Olọ́pọ́n.' },
+                { id: 'pawns_acrylic_ludo', title: 'Lagos Island Acrylic Ludo Pawns', price: '2,000 Coins', icon: '🎲', desc: 'Transparent glowing physical pawns with custom dice.' },
+                { id: 'cards_gold_whot', title: 'Gold Foil Whot Card Deck', price: '1,500 Coins', icon: '🃏', desc: 'Premium metallic finished cards with special audio FX.' }
               ].map((item, idx) => (
-                <div key={idx} className="p-4 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg flex flex-col justify-between space-y-3">
+                <div key={item.id} className="p-4 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg flex flex-col justify-between space-y-3">
                   <div className="space-y-1.5">
                     <span className="text-3xl">{item.icon}</span>
                     <h4 className="font-bold text-sm text-white">{item.title}</h4>
@@ -674,8 +737,8 @@ export const ArcadeHub: React.FC<ArcadeHubProps> = ({
                   <div className="pt-2 border-t border-white/10 flex justify-between items-center">
                     <span className="font-mono text-xs font-bold text-amber-400">{item.price}</span>
                     <button
-                      onClick={() => alert(`Unlocked ${item.title}! Added to your equipment locker.`)}
-                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase tracking-wider"
+                      onClick={() => handlePurchaseItem(item)}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-md"
                     >
                       UNLOCK
                     </button>

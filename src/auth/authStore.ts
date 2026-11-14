@@ -373,6 +373,59 @@ class AuthStore {
     }
   }
 
+  public deductCoins(amount: number, userId?: string) {
+    const targetId = userId || this.currentUser?.id;
+    if (!targetId) return;
+    this.addCoins(targetId, -amount);
+  }
+
+  public updateProfile(updated: Partial<UserProfile>) {
+    this.updateUserProfile(updated);
+  }
+
+  public recordMatchResult(
+    isWin: boolean,
+    coinsEarned: number,
+    xpEarned: number,
+    extraStats?: {
+      goalsScored?: number;
+      ayoCaptures?: number;
+      chopsCount?: number;
+      highBreak?: number;
+    }
+  ) {
+    if (!this.currentUser) return;
+    const u = this.currentUser;
+    u.streetCoins += coinsEarned;
+    u.xp += xpEarned;
+    u.stats.matchesPlayed += 1;
+    if (isWin) {
+      u.stats.wins += 1;
+    } else {
+      u.stats.losses += 1;
+    }
+    u.stats.winRate = Math.round((u.stats.wins / u.stats.matchesPlayed) * 1000) / 10;
+    if (extraStats?.goalsScored) u.stats.goalsScored += extraStats.goalsScored;
+    if (extraStats?.ayoCaptures) u.stats.ayoCaptures += extraStats.ayoCaptures;
+    if (extraStats?.chopsCount) u.stats.chopsCount += extraStats.chopsCount;
+    if (extraStats?.highBreak && extraStats.highBreak > (u.stats.highBreak || 0)) {
+      u.stats.highBreak = extraStats.highBreak;
+    }
+
+    const newLevel = Math.max(1, Math.floor(u.xp / 1000) + 1);
+    if (newLevel > u.level) {
+      u.level = newLevel;
+    }
+
+    const inList = this.users.find(x => x.id === u.id);
+    if (inList) {
+      Object.assign(inList, u);
+    }
+    this.saveCurrentUser();
+    this.saveUsers();
+    this.notify();
+  }
+
   public toggleBan(userId: string) {
     const u = this.users.find(x => x.id === userId);
     if (u && u.role !== 'admin') {
