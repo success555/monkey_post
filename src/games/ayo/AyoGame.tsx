@@ -192,7 +192,7 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
   const p2Score = gameState.captured[2];
 
   return (
-    <div className="relative w-full h-full min-h-screen overflow-hidden bg-stone-950 font-sans select-none text-white">
+    <div className="relative w-screen h-[100dvh] max-h-screen overflow-hidden bg-stone-950 font-sans select-none text-white">
       {/* 3D WebGL Canvas Viewport */}
       <div
         ref={containerRef}
@@ -201,36 +201,36 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
       />
 
       {/* TOP HEADER HUD */}
-      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-stone-950/90 via-stone-950/60 to-transparent pointer-events-none">
+      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-1.5 xs:p-2 sm:p-4 bg-gradient-to-b from-stone-950/95 via-stone-950/60 to-transparent pointer-events-none">
         {/* Back to Hub Button */}
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={onExit}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-600/30 text-amber-300 font-bold text-xs tracking-wider uppercase transition-all shadow-lg active:scale-95"
+            className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-600/30 text-amber-300 font-bold text-[10px] sm:text-xs tracking-wider uppercase transition-all shadow-md active:scale-95"
           >
             <span>&larr;</span>
-            <span className="hidden sm:inline">ARCADE</span>
+            <span className="hidden xs:inline">ARCADE</span>
             <span>HUB</span>
           </button>
-          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-600/20 text-amber-400/90 text-xs font-semibold">
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-950/40 border border-amber-600/20 text-amber-400/90 text-xs font-semibold">
             <span>&#9876;</span>
             <span>AY&Ograve; OLỌ́PỌ́N 3D</span>
           </div>
         </div>
 
         {/* Center Scoreboards & Target (25 to win) */}
-        <div className="pointer-events-auto flex items-center gap-3 bg-stone-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-amber-500/30 shadow-2xl">
+        <div className="pointer-events-auto flex items-center gap-1.5 xs:gap-2 sm:gap-3 bg-stone-900/90 backdrop-blur-md px-2 xs:px-3 sm:px-4 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl border border-amber-500/30 shadow-xl">
           {/* Player 1 (South) */}
-          <div className={`flex flex-col items-center px-2 sm:px-3 py-1 rounded-xl transition-all ${gameState.currentTurn === 1 ? 'bg-amber-500/20 ring-1 ring-amber-400' : 'opacity-70'}`}>
-            <span className="text-[10px] tracking-widest uppercase font-extrabold text-amber-300">
-              {gameMode === 'vs_ai' ? 'YOU (SOUTH)' : 'PLAYER 1'}
+          <div className={`flex flex-col items-center px-1.5 xs:px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl transition-all ${gameState.currentTurn === 1 ? 'bg-amber-500/20 ring-1 ring-amber-400' : 'opacity-70'}`}>
+            <span className="text-[8px] xs:text-[9px] sm:text-[10px] tracking-wider uppercase font-extrabold text-amber-300">
+              {gameMode === 'vs_ai' ? 'YOU' : 'P1'}<span className="hidden sm:inline"> {gameMode === 'vs_ai' ? '(SOUTH)' : ''}</span>
             </span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl sm:text-2xl font-black text-amber-200">{p1Score}</span>
-              <span className="text-[10px] text-stone-400 font-bold">/ 25</span>
+            <div className="flex items-baseline gap-0.5 sm:gap-1">
+              <span className="text-base xs:text-lg sm:text-2xl font-black text-amber-200">{p1Score}</span>
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] text-stone-400 font-bold">/ 25</span>
             </div>
-            {/* Progress Bar */}
-            <div className="w-14 sm:w-16 h-1.5 bg-stone-800 rounded-full overflow-hidden mt-1">
+            {/* Progress Bar (hidden on ultra-small screens) */}
+            <div className="hidden md:block w-12 sm:w-16 h-1 sm:h-1.5 bg-stone-800 rounded-full overflow-hidden mt-0.5 sm:mt-1">
               <div
                 className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300"
                 style={{ width: `${Math.min(100, (p1Score / 25) * 100)}%` }}
@@ -240,8 +240,8 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
 
           {/* VS Divider & Current Turn Badge */}
           <div className="flex flex-col items-center">
-            <span className="text-[10px] font-black tracking-widest text-amber-500/60">VS</span>
-            <div className={`mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+            <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-black tracking-widest text-amber-500/60">VS</span>
+            <div className={`mt-0.5 px-1.5 py-0.2 sm:px-2 sm:py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-wider ${
               gameState.currentTurn === 1
                 ? 'bg-amber-500 text-stone-950 animate-pulse'
                 : 'bg-orange-500 text-stone-950 animate-pulse'
@@ -253,16 +253,16 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
           </div>
 
           {/* Player 2 / AI (North) */}
-          <div className={`flex flex-col items-center px-2 sm:px-3 py-1 rounded-xl transition-all ${gameState.currentTurn === 2 ? 'bg-orange-500/20 ring-1 ring-orange-400' : 'opacity-70'}`}>
-            <span className="text-[10px] tracking-widest uppercase font-extrabold text-orange-300">
-              {gameMode === 'vs_ai' ? 'BAALE (NORTH)' : 'PLAYER 2'}
+          <div className={`flex flex-col items-center px-1.5 xs:px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl transition-all ${gameState.currentTurn === 2 ? 'bg-orange-500/20 ring-1 ring-orange-400' : 'opacity-70'}`}>
+            <span className="text-[8px] xs:text-[9px] sm:text-[10px] tracking-wider uppercase font-extrabold text-orange-300">
+              {gameMode === 'vs_ai' ? 'BAALE' : 'P2'}<span className="hidden sm:inline"> {gameMode === 'vs_ai' ? '(NORTH)' : ''}</span>
             </span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl sm:text-2xl font-black text-orange-200">{p2Score}</span>
-              <span className="text-[10px] text-stone-400 font-bold">/ 25</span>
+            <div className="flex items-baseline gap-0.5 sm:gap-1">
+              <span className="text-base xs:text-lg sm:text-2xl font-black text-orange-200">{p2Score}</span>
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] text-stone-400 font-bold">/ 25</span>
             </div>
-            {/* Progress Bar */}
-            <div className="w-14 sm:w-16 h-1.5 bg-stone-800 rounded-full overflow-hidden mt-1">
+            {/* Progress Bar (hidden on ultra-small screens) */}
+            <div className="hidden md:block w-12 sm:w-16 h-1 sm:h-1.5 bg-stone-800 rounded-full overflow-hidden mt-0.5 sm:mt-1">
               <div
                 className="h-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-300"
                 style={{ width: `${Math.min(100, (p2Score / 25) * 100)}%` }}
@@ -272,25 +272,25 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
         </div>
 
         {/* Right Action Icons (Mute, Rules, Reset) */}
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto flex items-center gap-1 sm:gap-2">
           <button
             onClick={handleToggleMute}
             aria-label="Toggle Mute"
-            className="w-9 h-9 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-md"
+            className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-xs sm:text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-sm"
           >
             {isMuted ? '🔇' : '🔊'}
           </button>
           <button
             onClick={() => setShowRules(true)}
             aria-label="Rules Guide"
-            className="w-9 h-9 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-600/40 flex items-center justify-center text-sm font-black text-amber-400 hover:text-amber-200 transition-all active:scale-95 shadow-md"
+            className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-600/40 flex items-center justify-center text-xs sm:text-sm font-black text-amber-400 hover:text-amber-200 transition-all active:scale-95 shadow-sm"
           >
             ?
           </button>
           <button
             onClick={handleRestart}
             aria-label="Restart Match"
-            className="w-9 h-9 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-md"
+            className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-xs sm:text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-sm"
           >
             ↺
           </button>
@@ -298,34 +298,34 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
       </header>
 
       {/* COMMENTARY BANNER */}
-      <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-10 w-[92%] max-w-xl pointer-events-none">
-        <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-stone-950/85 backdrop-blur-md border border-amber-600/30 shadow-2xl text-center">
-          <span className="text-lg">📿</span>
-          <p className="flex-1 text-xs sm:text-sm font-semibold text-amber-200 italic truncate">
+      <div className="absolute top-11 xs:top-12 sm:top-20 md:top-22 left-1/2 -translate-x-1/2 z-10 w-[94%] max-w-xs xs:max-w-sm sm:max-w-xl pointer-events-none">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-0.5 sm:py-1.5 rounded-full sm:rounded-2xl bg-stone-950/85 backdrop-blur-md border border-amber-600/30 shadow-lg text-center">
+          <span className="text-xs sm:text-base">📿</span>
+          <p className="flex-1 text-[10px] sm:text-xs md:text-sm font-semibold text-amber-200 italic truncate">
             &ldquo;{commentary}&rdquo;
           </p>
         </div>
       </div>
 
       {/* BOTTOM CONTROLS DOCK */}
-      <footer className="absolute bottom-3 sm:bottom-4 left-0 right-0 z-20 flex flex-col sm:flex-row items-center justify-between gap-2 px-4 pointer-events-none">
+      <footer className="absolute bottom-1.5 xs:bottom-2 sm:bottom-4 left-0 right-0 z-20 flex flex-row items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-4 pointer-events-none">
         {/* Instructions pill */}
-        <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-900/90 backdrop-blur border border-amber-500/20 text-[11px] font-medium text-stone-300 shadow-lg">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+        <div className="pointer-events-auto hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-900/90 backdrop-blur border border-amber-500/20 text-[10px] sm:text-[11px] font-medium text-stone-300 shadow-md">
+          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-ping" />
           <span>
             {gameMode === 'vs_ai'
-              ? (isThinking ? 'Elder Baale is moving...' : 'Click glowing pit (0–5) to sow')
-              : `Player ${gameState.currentTurn}: Click your glowing pit to sow`}
+              ? (isThinking ? 'Elder Baale moving...' : 'Click glowing pit (0–5) to sow')
+              : `P${gameState.currentTurn}: Click glowing pit`}
           </span>
         </div>
 
         {/* Mode & Difficulty Selectors */}
-        <div className="pointer-events-auto flex items-center gap-2 bg-stone-950/90 backdrop-blur-md p-1.5 rounded-2xl border border-stone-800 shadow-2xl">
+        <div className="pointer-events-auto ml-auto flex items-center gap-1 sm:gap-2 bg-stone-950/90 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-stone-800 shadow-xl">
           {/* Mode Switcher */}
-          <div className="flex bg-stone-900 p-0.5 rounded-xl border border-stone-800">
+          <div className="flex bg-stone-900 p-0.5 rounded-lg sm:rounded-xl border border-stone-800">
             <button
               onClick={() => { setGameMode('vs_ai'); handleRestart(); }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
                 gameMode === 'vs_ai'
                   ? 'bg-amber-500 text-stone-950 shadow-md'
                   : 'text-stone-400 hover:text-stone-200'
@@ -335,7 +335,7 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
             </button>
             <button
               onClick={() => { setGameMode('local_2p'); handleRestart(); }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
                 gameMode === 'local_2p'
                   ? 'bg-amber-500 text-stone-950 shadow-md'
                   : 'text-stone-400 hover:text-stone-200'
@@ -347,12 +347,12 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
 
           {/* AI Difficulty (only visible when vs AI) */}
           {gameMode === 'vs_ai' && (
-            <div className="flex bg-stone-900 p-0.5 rounded-xl border border-stone-800">
+            <div className="flex bg-stone-900 p-0.5 rounded-lg sm:rounded-xl border border-stone-800">
               {(['easy', 'medium', 'master'] as AIDifficulty[]).map((lvl) => (
                 <button
                   key={lvl}
                   onClick={() => setDifficulty(lvl)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide transition-all ${
+                  className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md sm:rounded-lg text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide transition-all ${
                     difficulty === lvl
                       ? 'bg-orange-500 text-stone-950 shadow-sm'
                       : 'text-stone-400 hover:text-stone-200'
@@ -368,52 +368,52 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
 
       {/* RULES MODAL */}
       {showRules && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-stone-900 border border-amber-600/40 rounded-3xl p-6 shadow-2xl text-stone-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-lg max-h-[88vh] overflow-y-auto bg-stone-900 border border-amber-600/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl text-stone-200">
             <button
               onClick={() => setShowRules(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center text-sm"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center text-sm"
             >
               &times;
             </button>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">📿</span>
+            <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+              <span className="text-2xl sm:text-3xl">📿</span>
               <div>
-                <h2 className="text-xl font-black text-amber-400">AYÒ OLỌ́PỌ́N RULES</h2>
-                <p className="text-xs text-stone-400">The Royal Yoruba Mancala Strategy Game</p>
+                <h2 className="text-lg sm:text-xl font-black text-amber-400">AYÒ OLỌ́PỌ́N RULES</h2>
+                <p className="text-[10px] sm:text-xs text-stone-400">The Royal Yoruba Mancala Strategy Game</p>
               </div>
             </div>
 
-            <div className="space-y-3.5 text-xs leading-relaxed text-stone-300">
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-1">1. The Board & Seeds (Ọmọ Ayò)</span>
+            <div className="space-y-2.5 sm:space-y-3.5 text-[11px] sm:text-xs leading-relaxed text-stone-300">
+              <div className="p-2.5 sm:p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
+                <span className="font-bold text-amber-300 block mb-0.5 sm:mb-1">1. The Board & Seeds (Ọmọ Ayò)</span>
                 There are 12 pits (6 South for Player 1, 6 North for Player 2/Baale) holding 48 total seeds (4 per pit).
               </div>
 
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-1">2. Sowing Seeds</span>
+              <div className="p-2.5 sm:p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
+                <span className="font-bold text-amber-300 block mb-0.5 sm:mb-1">2. Sowing Seeds</span>
                 Pick all seeds from one of your pits and drop them one-by-one counter-clockwise. If a pit holds 12+ seeds, skip the origin pit during the lap!
               </div>
 
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-1">3. Harvesting / Capturing</span>
+              <div className="p-2.5 sm:p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
+                <span className="font-bold text-amber-300 block mb-0.5 sm:mb-1">3. Harvesting / Capturing</span>
                 If your final seed drops on the opponent&apos;s side and brings that pit&apos;s count to exactly <strong>2</strong> or <strong>3</strong> seeds, you capture them! Continuous backward pits with 2 or 3 seeds are also captured in a chain reaction!
               </div>
 
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-1">4. The Odu Rule (Anti-Starvation)</span>
+              <div className="p-2.5 sm:p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
+                <span className="font-bold text-amber-300 block mb-0.5 sm:mb-1">4. The Odu Rule (Anti-Starvation)</span>
                 You cannot capture all seeds on the opponent&apos;s side if doing so leaves them with zero seeds to move on their next turn. Traditional chivalry requires leaving them a move!
               </div>
 
-              <div className="p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
-                <span className="font-bold text-amber-300 block mb-1">5. Winning</span>
+              <div className="p-2.5 sm:p-3 bg-stone-950/60 rounded-xl border border-amber-500/20">
+                <span className="font-bold text-amber-300 block mb-0.5 sm:mb-1">5. Winning</span>
                 The first player to capture <strong>25 or more seeds</strong> out of 48 instantly wins the match!
               </div>
             </div>
 
             <button
               onClick={() => setShowRules(false)}
-              className="mt-6 w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-black text-sm uppercase tracking-wider hover:brightness-110 active:scale-98 shadow-lg shadow-amber-500/30"
+              className="mt-4 sm:mt-6 w-full py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-black text-xs sm:text-sm uppercase tracking-wider hover:brightness-110 active:scale-98 shadow-lg shadow-amber-500/30"
             >
               I Understand — Let&apos;s Play!
             </button>
@@ -423,52 +423,52 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
 
       {/* GAME OVER MODAL */}
       {showEndModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md bg-stone-900 border-2 border-amber-500/60 rounded-3xl p-6 text-center shadow-2xl">
-            <span className="text-5xl block mb-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-xs sm:max-w-md max-h-[92vh] overflow-y-auto bg-stone-900 border-2 border-amber-500/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center shadow-2xl">
+            <span className="text-4xl sm:text-5xl block mb-1 sm:mb-2">
               {gameState.winner === 1 ? '👑' : gameState.winner === 2 ? '📿' : '🤝'}
             </span>
-            <h2 className="text-2xl font-black text-amber-400 mb-1">
+            <h2 className="text-lg sm:text-2xl font-black text-amber-400 mb-0.5 sm:mb-1">
               {gameState.winner === 1
                 ? (gameMode === 'vs_ai' ? 'YOU DEFEATED THE BAALE!' : 'PLAYER 1 WINS!')
                 : gameState.winner === 2
                 ? (gameMode === 'vs_ai' ? 'ELDER BAALE PREVAILS!' : 'PLAYER 2 WINS!')
                 : 'STALEMATE / DRAW!'}
             </h2>
-            <p className="text-xs text-stone-400 mb-5">
+            <p className="text-[11px] sm:text-xs text-stone-400 mb-4 sm:mb-5">
               {gameState.winner === 1
                 ? getRandomQuote(BAALE_QUOTES.win)
                 : getRandomQuote(BAALE_QUOTES.loss)}
             </p>
 
             {/* Final Scores */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="p-3 rounded-2xl bg-stone-950 border border-amber-500/30">
-                <span className="text-[10px] uppercase font-bold text-amber-300 block">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mb-4 sm:mb-6">
+              <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-stone-950 border border-amber-500/30">
+                <span className="text-[9px] sm:text-[10px] uppercase font-bold text-amber-300 block">
                   {gameMode === 'vs_ai' ? 'Your Harvest' : 'Player 1'}
                 </span>
-                <span className="text-3xl font-black text-amber-200">{p1Score}</span>
-                <span className="text-[10px] text-stone-400 block">seeds captured</span>
+                <span className="text-2xl sm:text-3xl font-black text-amber-200">{p1Score}</span>
+                <span className="text-[9px] sm:text-[10px] text-stone-400 block">seeds captured</span>
               </div>
-              <div className="p-3 rounded-2xl bg-stone-950 border border-orange-500/30">
-                <span className="text-[10px] uppercase font-bold text-orange-300 block">
+              <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-stone-950 border border-orange-500/30">
+                <span className="text-[9px] sm:text-[10px] uppercase font-bold text-orange-300 block">
                   {gameMode === 'vs_ai' ? 'Elder Baale' : 'Player 2'}
                 </span>
-                <span className="text-3xl font-black text-orange-200">{p2Score}</span>
-                <span className="text-[10px] text-stone-400 block">seeds captured</span>
+                <span className="text-2xl sm:text-3xl font-black text-orange-200">{p2Score}</span>
+                <span className="text-[9px] sm:text-[10px] text-stone-400 block">seeds captured</span>
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2.5 sm:gap-3">
               <button
                 onClick={handleRestart}
-                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-98 shadow-lg shadow-amber-500/30"
+                className="flex-1 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-black text-[11px] sm:text-xs uppercase tracking-wider hover:brightness-110 active:scale-98 shadow-lg shadow-amber-500/30"
               >
                 Play Rematch
               </button>
               <button
                 onClick={onExit}
-                className="flex-1 py-3 rounded-2xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold text-xs uppercase tracking-wider transition-all border border-stone-700"
+                className="flex-1 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-all border border-stone-700"
               >
                 Arcade Hub
               </button>

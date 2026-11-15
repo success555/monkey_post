@@ -32,6 +32,7 @@ export class AyoScene3D {
   private raycaster = new THREE.Raycaster();
   private mouse = new THREE.Vector2();
   private hoveredPitIndex: number | null = null;
+  private cameraTarget = new THREE.Vector3(0, -0.2, 0.2);
   public onPitSelect?: (pitIndex: number) => void;
   public isInteractive = true;
   public currentTurn: Player = 1;
@@ -82,6 +83,7 @@ export class AyoScene3D {
 
     // Event Listeners & Resize Observers
     this.bindEvents();
+    this.onResize();
 
     if (typeof ResizeObserver !== 'undefined' && this.container) {
       this.resizeObserver = new ResizeObserver(() => {
@@ -634,7 +636,29 @@ export class AyoScene3D {
     if (width <= 0 || height <= 0 || !Number.isFinite(width) || !Number.isFinite(height)) return;
     const aspect = width / height;
     if (!Number.isFinite(aspect) || aspect <= 0) return;
+
     this.camera.aspect = aspect;
+
+    // ADAPTIVE CAMERA FRAMING FOR MOBILE PORTRAIT & LANDSCAPE
+    if (aspect < 1.0) {
+      // Mobile Portrait: Scale camera distance and adjust FOV so the 15.5-unit wide board fits with safety margins
+      const portraitScale = Math.max(1.0, 0.82 / Math.max(0.42, aspect));
+      this.camera.fov = Math.min(62, 42 * (1 + (1 - aspect) * 0.45));
+      this.camera.position.set(0, 10.5 * portraitScale, 9.2 * portraitScale);
+      this.cameraTarget.set(0, -0.2, 0);
+    } else if (height <= 550 || (aspect >= 1.5 && height <= 620)) {
+      // Mobile Landscape: Pull back slightly and look downward to clear top header & commentary banner
+      this.camera.fov = 44;
+      this.camera.position.set(0, 12.2, 10.6);
+      this.cameraTarget.set(0, -0.35, -0.65);
+    } else {
+      // Standard Desktop / Tablet
+      this.camera.fov = 42;
+      this.camera.position.set(0, 10.5, 9.2);
+      this.cameraTarget.set(0, -0.2, 0.2);
+    }
+
+    this.camera.lookAt(this.cameraTarget);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
   };
@@ -661,6 +685,7 @@ export class AyoScene3D {
     // Subtle gentle camera breathing effect
     const t = performance.now() * 0.0008;
     this.camera.position.x = Math.sin(t * 0.5) * 0.15;
+    this.camera.lookAt(this.cameraTarget);
 
     this.renderer.render(this.scene, this.camera);
   };
