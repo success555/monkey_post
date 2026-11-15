@@ -34,7 +34,13 @@ export const App: React.FC = () => {
   const engineRef = useRef<GameEngine | null>(null);
 
   // Active Arcade Game: null = Master Arcade Hub, 'monkey_post' = Monkey Post 3D
-  const [activeGameId, setActiveGameId] = useState<string | null>(null);
+  const [activeGameId, setActiveGameId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('game') || null;
+    }
+    return null;
+  });
   const [showAdminDashboard, setShowAdminDashboard] = useState<boolean>(false);
 
   // Match & Team States

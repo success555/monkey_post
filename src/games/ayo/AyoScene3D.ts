@@ -13,7 +13,7 @@ export interface PitPosition {
 export class AyoScene3D {
   private container: HTMLElement;
   private scene: THREE.Scene;
-  private camera: THREE.PerspectiveCamera;
+  public camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private animFrameId: number | null = null;
 
@@ -639,21 +639,22 @@ export class AyoScene3D {
 
     // ADAPTIVE CAMERA FRAMING FOR MOBILE PORTRAIT & LANDSCAPE
     if (aspect < 1.0) {
-      // Mobile Portrait: Increase FOV and scale camera distance smoothly so the 15.5-unit wide board fits comfortably
-      const portraitScale = Math.min(1.4, Math.max(1.0, 0.85 / Math.max(0.45, aspect)));
-      this.camera.fov = Math.min(58, 42 * (1 + (1 - aspect) * 0.35));
-      this.camera.position.set(0, 10.5 * portraitScale, 9.2 * portraitScale);
-    } else if (height <= 550 || (aspect >= 1.6 && height <= 650)) {
-      // Mobile Landscape: Slightly widen FOV so board is cleanly centered with plenty of space above for HUD
+      // Mobile Portrait: Pull camera back smoothly along viewing angle so the entire 16-unit wide board & stores fit
+      const pullScale = Math.min(2.5, Math.max(1.0, 1.05 / Math.max(0.42, aspect)));
+      this.camera.fov = 54;
+      this.camera.position.set(0, 11.5 * pullScale, 10.0 * pullScale);
+      this.camera.lookAt(0, -0.4, 0.3);
+    } else if (height <= 550 || (aspect >= 1.5 && height <= 650)) {
+      // Mobile Landscape: Widen FOV and adjust lookAt so North pits are 100% visible and well below top HUD & commentary
       this.camera.fov = 48;
-      this.camera.position.set(0, 11.4, 9.8);
+      this.camera.position.set(0, 11.2, 9.2);
+      this.camera.lookAt(0, 2.2, -1.5);
     } else {
       // Standard Desktop / Tablet
       this.camera.fov = 42;
       this.camera.position.set(0, 10.5, 9.2);
+      this.camera.lookAt(0, -0.2, 0.2);
     }
-
-    this.camera.lookAt(0, -0.2, 0.2);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
   };

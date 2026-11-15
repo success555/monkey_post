@@ -147,6 +147,9 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
     };
     scene.updateBoardState(engineRef.current.state);
     sceneRef.current = scene;
+    if (typeof window !== 'undefined') {
+      (window as any).__ayoScene = scene;
+    }
 
     // Dispatches immediate & staggered resize passes to ensure canvas renders with correct dimensions
     const doResize = () => {
@@ -201,114 +204,119 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
       />
 
       {/* TOP HEADER HUD */}
-      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-1.5 xs:p-2 sm:p-4 bg-gradient-to-b from-stone-950/95 via-stone-950/60 to-transparent pointer-events-none">
-        {/* Back to Hub Button */}
-        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
-          <button
-            onClick={onExit}
-            className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-600/30 text-amber-300 font-bold text-[10px] sm:text-xs tracking-wider uppercase transition-all shadow-md active:scale-95"
-          >
-            <span>&larr;</span>
-            <span className="hidden xs:inline">ARCADE</span>
-            <span>HUB</span>
-          </button>
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-950/40 border border-amber-600/20 text-amber-400/90 text-xs font-semibold">
-            <span>&#9876;</span>
-            <span>AY&Ograve; OLỌ́PỌ́N 3D</span>
+      <header className="absolute top-0 left-0 right-0 z-20 flex flex-col items-center p-1.5 xs:p-2 sm:p-3 bg-gradient-to-b from-stone-950/95 via-stone-950/60 to-transparent pointer-events-none">
+        <div className="w-full flex items-center justify-between">
+          {/* Back to Hub Button */}
+          <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
+            <button
+              onClick={onExit}
+              className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-600/30 text-amber-300 font-bold text-[10px] sm:text-xs tracking-wider uppercase transition-all shadow-md active:scale-95"
+            >
+              <span>&larr;</span>
+              <span className="hidden xs:inline">ARCADE</span>
+              <span>HUB</span>
+            </button>
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-950/40 border border-amber-600/20 text-amber-400/90 text-xs font-semibold">
+              <span>&#9876;</span>
+              <span>AY&Ograve; OLỌ́PỌ́N 3D</span>
+            </div>
+          </div>
+
+          {/* Center Scoreboards & Target (25 to win) */}
+          <div className="pointer-events-auto flex items-center gap-1.5 xs:gap-2 sm:gap-3 bg-stone-900/90 backdrop-blur-md px-2 xs:px-3 sm:px-4 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl border border-amber-500/30 shadow-xl">
+            {/* Player 1 (South) */}
+            <div className={`flex flex-col items-center px-1.5 xs:px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl transition-all ${gameState.currentTurn === 1 ? 'bg-amber-500/20 ring-1 ring-amber-400' : 'opacity-70'}`}>
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] tracking-wider uppercase font-extrabold text-amber-300">
+                {gameMode === 'vs_ai' ? 'YOU' : 'P1'}<span className="hidden sm:inline"> {gameMode === 'vs_ai' ? '(SOUTH)' : ''}</span>
+              </span>
+              <div className="flex items-baseline gap-0.5 sm:gap-1">
+                <span className="text-base xs:text-lg sm:text-2xl font-black text-amber-200">{p1Score}</span>
+                <span className="text-[8px] xs:text-[9px] sm:text-[10px] text-stone-400 font-bold">/ 25</span>
+              </div>
+              {/* Progress Bar (hidden on ultra-small screens) */}
+              <div className="hidden md:block w-12 sm:w-16 h-1 sm:h-1.5 bg-stone-800 rounded-full overflow-hidden mt-0.5 sm:mt-1">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300"
+                  style={{ width: `${Math.min(100, (p1Score / 25) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* VS Divider & Current Turn Badge */}
+            <div className="flex flex-col items-center">
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-black tracking-widest text-amber-500/60">VS</span>
+              <div className={`mt-0.5 px-1.5 py-0.2 sm:px-2 sm:py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-wider ${
+                gameState.currentTurn === 1
+                  ? 'bg-amber-500 text-stone-950 animate-pulse'
+                  : 'bg-orange-500 text-stone-950 animate-pulse'
+              }`}>
+                {gameState.currentTurn === 1
+                  ? (gameMode === 'vs_ai' ? 'Your Turn' : 'P1 Turn')
+                  : (gameMode === 'vs_ai' ? 'Baale...' : 'P2 Turn')}
+              </div>
+            </div>
+
+            {/* Player 2 / AI (North) */}
+            <div className={`flex flex-col items-center px-1.5 xs:px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl transition-all ${gameState.currentTurn === 2 ? 'bg-orange-500/20 ring-1 ring-orange-400' : 'opacity-70'}`}>
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] tracking-wider uppercase font-extrabold text-orange-300">
+                {gameMode === 'vs_ai' ? 'BAALE' : 'P2'}<span className="hidden sm:inline"> {gameMode === 'vs_ai' ? '(NORTH)' : ''}</span>
+              </span>
+              <div className="flex items-baseline gap-0.5 sm:gap-1">
+                <span className="text-base xs:text-lg sm:text-2xl font-black text-orange-200">{p2Score}</span>
+                <span className="text-[8px] xs:text-[9px] sm:text-[10px] text-stone-400 font-bold">/ 25</span>
+              </div>
+              {/* Progress Bar (hidden on ultra-small screens) */}
+              <div className="hidden md:block w-12 sm:w-16 h-1 sm:h-1.5 bg-stone-800 rounded-full overflow-hidden mt-0.5 sm:mt-1">
+                <div
+                  className="h-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-300"
+                  style={{ width: `${Math.min(100, (p2Score / 25) * 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Action Icons (Mute, Rules, Reset) */}
+          <div className="pointer-events-auto flex items-center gap-1 sm:gap-2">
+            <button
+              onClick={handleToggleMute}
+              aria-label="Toggle Mute"
+              className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-xs sm:text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-sm"
+            >
+              {isMuted ? '🔇' : '🔊'}
+            </button>
+            <button
+              onClick={() => setShowRules(true)}
+              aria-label="Rules Guide"
+              className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-600/40 flex items-center justify-center text-xs sm:text-sm font-black text-amber-400 hover:text-amber-200 transition-all active:scale-95 shadow-sm"
+            >
+              ?
+            </button>
+            <button
+              onClick={handleRestart}
+              aria-label="Restart Match"
+              className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-xs sm:text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-sm"
+            >
+              ↺
+            </button>
           </div>
         </div>
 
-        {/* Center Scoreboards & Target (25 to win) */}
-        <div className="pointer-events-auto flex items-center gap-1.5 xs:gap-2 sm:gap-3 bg-stone-900/90 backdrop-blur-md px-2 xs:px-3 sm:px-4 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl border border-amber-500/30 shadow-xl">
-          {/* Player 1 (South) */}
-          <div className={`flex flex-col items-center px-1.5 xs:px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl transition-all ${gameState.currentTurn === 1 ? 'bg-amber-500/20 ring-1 ring-amber-400' : 'opacity-70'}`}>
-            <span className="text-[8px] xs:text-[9px] sm:text-[10px] tracking-wider uppercase font-extrabold text-amber-300">
-              {gameMode === 'vs_ai' ? 'YOU' : 'P1'}<span className="hidden sm:inline"> {gameMode === 'vs_ai' ? '(SOUTH)' : ''}</span>
-            </span>
-            <div className="flex items-baseline gap-0.5 sm:gap-1">
-              <span className="text-base xs:text-lg sm:text-2xl font-black text-amber-200">{p1Score}</span>
-              <span className="text-[8px] xs:text-[9px] sm:text-[10px] text-stone-400 font-bold">/ 25</span>
-            </div>
-            {/* Progress Bar (hidden on ultra-small screens) */}
-            <div className="hidden md:block w-12 sm:w-16 h-1 sm:h-1.5 bg-stone-800 rounded-full overflow-hidden mt-0.5 sm:mt-1">
-              <div
-                className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300"
-                style={{ width: `${Math.min(100, (p1Score / 25) * 100)}%` }}
-              />
-            </div>
+        {/* COMMENTARY BANNER */}
+        <div className="mt-1 sm:mt-1.5 pointer-events-none w-[94%] max-w-xs xs:max-w-sm sm:max-w-xl">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-0.5 sm:py-1 rounded-full bg-stone-950/85 backdrop-blur-md border border-amber-600/30 shadow-lg text-center">
+            <span className="text-xs sm:text-base">📿</span>
+            <p className="flex-1 text-[10px] sm:text-xs md:text-sm font-semibold text-amber-200 italic truncate">
+              &ldquo;{commentary}&rdquo;
+            </p>
           </div>
-
-          {/* VS Divider & Current Turn Badge */}
-          <div className="flex flex-col items-center">
-            <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-black tracking-widest text-amber-500/60">VS</span>
-            <div className={`mt-0.5 px-1.5 py-0.2 sm:px-2 sm:py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-wider ${
-              gameState.currentTurn === 1
-                ? 'bg-amber-500 text-stone-950 animate-pulse'
-                : 'bg-orange-500 text-stone-950 animate-pulse'
-            }`}>
-              {gameState.currentTurn === 1
-                ? (gameMode === 'vs_ai' ? 'Your Turn' : 'P1 Turn')
-                : (gameMode === 'vs_ai' ? 'Baale...' : 'P2 Turn')}
-            </div>
-          </div>
-
-          {/* Player 2 / AI (North) */}
-          <div className={`flex flex-col items-center px-1.5 xs:px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl transition-all ${gameState.currentTurn === 2 ? 'bg-orange-500/20 ring-1 ring-orange-400' : 'opacity-70'}`}>
-            <span className="text-[8px] xs:text-[9px] sm:text-[10px] tracking-wider uppercase font-extrabold text-orange-300">
-              {gameMode === 'vs_ai' ? 'BAALE' : 'P2'}<span className="hidden sm:inline"> {gameMode === 'vs_ai' ? '(NORTH)' : ''}</span>
-            </span>
-            <div className="flex items-baseline gap-0.5 sm:gap-1">
-              <span className="text-base xs:text-lg sm:text-2xl font-black text-orange-200">{p2Score}</span>
-              <span className="text-[8px] xs:text-[9px] sm:text-[10px] text-stone-400 font-bold">/ 25</span>
-            </div>
-            {/* Progress Bar (hidden on ultra-small screens) */}
-            <div className="hidden md:block w-12 sm:w-16 h-1 sm:h-1.5 bg-stone-800 rounded-full overflow-hidden mt-0.5 sm:mt-1">
-              <div
-                className="h-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-300"
-                style={{ width: `${Math.min(100, (p2Score / 25) * 100)}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Right Action Icons (Mute, Rules, Reset) */}
-        <div className="pointer-events-auto flex items-center gap-1 sm:gap-2">
-          <button
-            onClick={handleToggleMute}
-            aria-label="Toggle Mute"
-            className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-xs sm:text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-sm"
-          >
-            {isMuted ? '🔇' : '🔊'}
-          </button>
-          <button
-            onClick={() => setShowRules(true)}
-            aria-label="Rules Guide"
-            className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-amber-600/40 flex items-center justify-center text-xs sm:text-sm font-black text-amber-400 hover:text-amber-200 transition-all active:scale-95 shadow-sm"
-          >
-            ?
-          </button>
-          <button
-            onClick={handleRestart}
-            aria-label="Restart Match"
-            className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg sm:rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/60 flex items-center justify-center text-xs sm:text-sm text-stone-300 hover:text-white transition-all active:scale-95 shadow-sm"
-          >
-            ↺
-          </button>
         </div>
       </header>
 
-      {/* COMMENTARY BANNER */}
-      <div className="absolute top-11 xs:top-12 sm:top-20 md:top-22 left-1/2 -translate-x-1/2 z-10 w-[94%] max-w-xs xs:max-w-sm sm:max-w-xl pointer-events-none">
-        <div className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-0.5 sm:py-1.5 rounded-full sm:rounded-2xl bg-stone-950/85 backdrop-blur-md border border-amber-600/30 shadow-lg text-center">
-          <span className="text-xs sm:text-base">📿</span>
-          <p className="flex-1 text-[10px] sm:text-xs md:text-sm font-semibold text-amber-200 italic truncate">
-            &ldquo;{commentary}&rdquo;
-          </p>
-        </div>
-      </div>
-
       {/* BOTTOM CONTROLS DOCK */}
-      <footer className="absolute bottom-1.5 xs:bottom-2 sm:bottom-4 left-0 right-0 z-20 flex flex-row items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-4 pointer-events-none">
+      <footer 
+        className="absolute bottom-2 sm:bottom-4 left-0 right-0 z-20 flex flex-row items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-4 pointer-events-none"
+        style={{ bottom: '8px' }}
+      >
         {/* Instructions pill */}
         <div className="pointer-events-auto hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-900/90 backdrop-blur border border-amber-500/20 text-[10px] sm:text-[11px] font-medium text-stone-300 shadow-md">
           <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-ping" />
