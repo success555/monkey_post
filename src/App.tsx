@@ -255,14 +255,14 @@ export const App: React.FC = () => {
 
   return (
     <div 
-      className={`relative w-full ${activeGameId ? 'h-screen overflow-hidden select-none touch-none' : 'min-h-screen overflow-y-auto scrollable'} bg-black`}
+      className={`relative w-full ${activeGameId ? 'h-[100dvh] h-screen overflow-hidden select-none' : 'min-h-screen overflow-y-auto scrollable'} bg-black`}
       style={{
         WebkitOverflowScrolling: 'touch',
-        touchAction: activeGameId ? 'none' : 'pan-y'
+        touchAction: activeGameId === 'monkey_post' ? 'none' : 'manipulation'
       }}
     >
-      {/* Screen Orientation Gate: Demands device rotation to Landscape before playing */}
-      <RotateOverlay />
+      {/* Screen Orientation Gate: Demands device rotation to Landscape before playing Monkey Post 3D */}
+      {activeGameId === 'monkey_post' && <RotateOverlay />}
 
       {/* --- MASTER ARCADE HUB DASHBOARD (Default Landing Screen) --- */}
       {activeGameId === null && !showAdminDashboard && (
