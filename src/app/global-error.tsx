@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import React from 'react';
 
 export default function GlobalError({
@@ -13,19 +11,22 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
-      <body className="bg-zinc-950 text-white flex flex-col items-center justify-center min-h-screen font-sans p-4 text-center select-none">
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-3xl mb-4 shadow-lg shadow-amber-500/20">
+      <head>
+        <title>Arena Error - Naija Street Arcade</title>
+      </head>
+      <body style={{ backgroundColor: '#09090b', color: '#ffffff', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif', padding: '1rem', textAlign: 'center', margin: 0 }}>
+        <div style={{ width: 64, height: 64, borderRadius: 16, backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, marginBottom: 16 }}>
           🦁
         </div>
-        <h1 className="font-display font-black text-2xl sm:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300">
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f59e0b', margin: '0 0 8px 0' }}>
           SOMETHING WENT WRONG!
         </h1>
-        <p className="text-xs sm:text-sm text-zinc-400 mt-2 max-w-sm">
+        <p style={{ fontSize: 13, color: '#a1a1aa', maxWidth: 360, margin: '0 0 24px 0' }}>
           {error?.message || 'An unexpected error occurred in the arena.'}
         </p>
         <button
           onClick={() => reset()}
-          className="mt-6 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-black font-display font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-400/20 transition-all active:scale-95 cursor-pointer"
+          style={{ padding: '10px 24px', borderRadius: 12, backgroundColor: '#f59e0b', color: '#000000', fontWeight: 900, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em', border: 'none', cursor: 'pointer' }}
         >
           RELOAD MATCH
         </button>

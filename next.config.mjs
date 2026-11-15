@@ -5,6 +5,15 @@ if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
 if (!process.env.CLERK_SECRET_KEY) {
   process.env.CLERK_SECRET_KEY = 'sk_test_IqR7IWp75y6H6TN1VjHU4odKXiOdHUntT09yB3GznN';
 }
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://sample-project.supabase.co';
+}
+if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'sample_anon_key';
+}
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sample_service_role_key';
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
