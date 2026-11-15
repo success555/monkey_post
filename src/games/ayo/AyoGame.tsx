@@ -192,7 +192,7 @@ export const AyoGame: React.FC<AyoGameProps> = ({ onExit }) => {
   const p2Score = gameState.captured[2];
 
   return (
-    <div className="relative w-screen h-[100dvh] max-h-screen overflow-hidden bg-stone-950 font-sans select-none text-white">
+    <div className="relative w-full h-full overflow-hidden bg-stone-950 font-sans select-none text-white">
       {/* 3D WebGL Canvas Viewport */}
       <div
         ref={containerRef}
