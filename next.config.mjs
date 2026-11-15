@@ -1,3 +1,8 @@
+// Force standard production environment during build regardless of external misconfigurations
+if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
+  process.env.NODE_ENV = 'production';
+}
+
 // Ensure build-safe default environment variables for Clerk & Supabase during static deployment builds
 if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_d29ydGh5LW1hbnRpcy0zNjIzLmNsZXJrLmFjY291bnRzLmRldiQ';
